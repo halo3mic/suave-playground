@@ -4,7 +4,8 @@ const { ethers } = require("ethers");
 
 const abis = fetchAbis();
 const SUAVE_CHAIN_ID = 424242;
-const CONFIDENTIAL_COMPUTE_REQUEST_TYPE_INT = 66 // 0x42
+const CONFIDENTIAL_COMPUTE_RECORD_TYPE_INT = 66 // 0x42
+const CONFIDENTIAL_COMPUTE_REQUEST_TYPE_INT = 67 // 0x43
 
 task(
   'send-bundles',
@@ -47,6 +48,7 @@ async function sendMevShareBidTxs(
 	
 	const bundleBytes = await makeDummyBundleBytes(goerliSigner);
 	const confidentialDataBytes = ethers.utils.defaultAbiCoder.encode(['bytes'], [bundleBytes])
+	const confidentialInputsHash = ethers.utils.keccak256(confidentialDataBytes)
 	const allowedPeekers = [Builder.address, MevShare.address];
 	
 	console.log('🤐 confidentialDataBytes:\n', confidentialDataBytes)
@@ -56,14 +58,13 @@ async function sendMevShareBidTxs(
 	console.log("startingGoerliBlockNum", startingGoerliBlockNum);
 	for (let blockNum = startingGoerliBlockNum + 1; blockNum < startingGoerliBlockNum + nBlocks; blockNum++) {
 		const calldata = await MevShare.interface.encodeFunctionData('newBid', [blockNum, allowedPeekers])
-		const mevShareTxRlp = await prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, MevShare.address);
+		const mevShareTxRlp = await prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, MevShare.address, confidentialInputsHash);
 		
 		console.log("sendMevShareBidTx", "mevShareTx", mevShareTxRlp);
-		
-		// const mevShareTxHex = '0x' + Buffer.from(JSON.stringify(mevShareTx), 'utf-8').toString('hex');
-		// console.log('mevShareTxHex', mevShareTxHex);
 
-		const response = await suaveSigner.provider.send('eth_sendRawTransaction', [mevShareTxRlp, confidentialDataBytes])
+		const inputBytes = makeConfidentialComputeRequest(mevShareTxRlp, confidentialDataBytes);
+		console.log(inputBytes)
+		const response = await suaveSigner.provider.send('eth_sendRawTransaction', [inputBytes])
 		console.log(response)
 	}
 
@@ -102,44 +103,61 @@ function txToBundle(signedTx) {
 	};
 }
 
-async function prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, mevShareAddr) {
+async function prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, mevShareAddr, confidentialInputsHash) {
 	const nonce = await suaveSigner.getTransactionCount();
-	const wrappedTxData = {
-		type: 2,
+	const tx = {
 		nonce,
 		to: mevShareAddr,
 		value: ethers.utils.parseEther('0'),
 		gasLimit: ethers.BigNumber.from(10000000),
-		maxPriorityFeePerGas: ethers.utils.parseUnits('1', 'gwei'),
-		maxFeePerGas: ethers.utils.parseUnits('1', 'gwei'),
+		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
 		data: calldata
-	};
-	
-	const signedWrapped = await suaveSigner.signTransaction(wrappedTxData);
-	console.log('signedWrapped', signedWrapped);
-	const confidentialRlp = rlpEncodeSuaveTx(executionNodeAddr, signedWrapped);
+	};	
+	const confidentialRlp = await makeConfidentialComputeRecord(
+		suaveSigner,
+		executionNodeAddr,
+		confidentialInputsHash,
+		tx,
+	);
 
 	return confidentialRlp;
 }
 
-function rlpEncodeSuaveTx(executionNode, wrappedTxSigned) {
-	var wrappedTxSigned = wrappedTxSigned;
-	if (typeof wrappedTxSigned != 'string') {
-		wrappedTxSigned = ethers.utils.serializeTransaction(
-			wrappedTxSigned, 
-			{
-				r: wrappedTxSigned.r,
-				s: wrappedTxSigned.s,
-				v: parseInt(wrappedTxSigned.v, 16),
-			}
-		);
-	}
+function makeConfidentialComputeRequest(
+	confidentialComputeRecord,
+	confidentialDataBytes
+) {
 	const rlpEncoded = ethers.utils.RLP.encode([
-		executionNode,
-		wrappedTxSigned,
-		intToHex(SUAVE_CHAIN_ID),
+		confidentialComputeRecord,
+		confidentialDataBytes,
 	]);
 	const eip2718Id = intToHex(CONFIDENTIAL_COMPUTE_REQUEST_TYPE_INT);
+
+	return eip2718Id + rlpEncoded.slice(2);
+}
+
+async function makeConfidentialComputeRecord(
+		signer, 
+		executionNode,
+		confidentialInputsHash,
+		confidentialTx,
+	) {
+	const rlpEncoded = ethers.utils.RLP.encode([
+		intToHex(confidentialTx.nonce), 
+		confidentialTx.gasPrice.toHexString(), 
+		confidentialTx.gasLimit.toHexString(), 
+		confidentialTx.to, 
+		confidentialTx.value.toHexString(), 
+		confidentialTx.data, 
+		executionNode,
+		confidentialInputsHash,
+		intToHex(SUAVE_CHAIN_ID),
+		// todo: real v, r, s
+		'0x00',
+		'0x00',
+		'0x00',
+	]);
+	const eip2718Id = intToHex(CONFIDENTIAL_COMPUTE_RECORD_TYPE_INT);
 
 	return eip2718Id + rlpEncoded.slice(2);
 }
