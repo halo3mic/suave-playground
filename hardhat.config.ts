@@ -1,30 +1,30 @@
-require('dotenv').config();
-require("@nomiclabs/hardhat-waffle");
-require('hardhat-deploy-ethers');
-require('hardhat-abi-exporter');
-require("hardhat-tracer");
-require('hardhat-deploy');
+
+import { config as dconfig } from 'dotenv'
+import '@nomiclabs/hardhat-waffle'
+import 'hardhat-deploy-ethers'
+import 'hardhat-abi-exporter'
+import 'hardhat-tracer'
+import 'hardhat-deploy'
+
+import { getEnvValSafe } from './utils'
+import './tasks/send-bundles'
 
 
-const { getEnvValSafe } = require('./utils')
-
-// Tasks
-require('./tasks/send-bundles')
-
-
+dconfig()
 const SUAVE_PK = getEnvValSafe("SUAVE_PK");
 const GOERLI_PK = getEnvValSafe("GOERLI_PK");
 const SUAVE_RPC = getEnvValSafe("SUAVE_RPC");
 const GOERLI_RPC = getEnvValSafe("GOERLI_RPC");
 
-module.exports = {
+
+export default {
   solidity: "0.8.8",
+  defaultNetwork: 'hardhat',
   namedAccounts: {
     deployer: {
       default: 0,
     }
   },
-  defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
       chainId: 424242,
@@ -48,4 +48,4 @@ module.exports = {
       accounts: [ GOERLI_PK ]
     }
   }
-};
+}

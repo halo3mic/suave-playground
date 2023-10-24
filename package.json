@@ -1,13 +1,13 @@
 {
   "name": "suave_playground",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "@flashbots/ethers-provider-bundle": "^0.6.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.7.3",
+    "@types/mocha": "^10.0.3",
     "@types/sinon-chai": "^3.2.11",
     "chai": "^4.3.4",
     "dotenv": "^16.3.1",
@@ -20,7 +20,9 @@
     "hardhat-deploy": "^0.11.34",
     "hardhat-deploy-ethers": "0.3.0-beta.13",
     "hardhat-tracer": "^2.6.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "start": "node ./src/index.js"

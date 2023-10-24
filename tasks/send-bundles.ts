@@ -1,58 +1,52 @@
-const { task } = require("hardhat/config");
-const { getEnvValSafe, fetchAbis } = require('../utils')
-const { ethers } = require("ethers");
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { task } from 'hardhat/config';
+import { ethers, Wallet } from 'ethers';
+import { getEnvValSafe } from '../utils';
 
-const abis = fetchAbis();
+type HRE = HardhatRuntimeEnvironment;
+
 const SUAVE_CHAIN_ID = 424242;
 const CONFIDENTIAL_COMPUTE_RECORD_TYPE_INT = 66 // 0x42
 const CONFIDENTIAL_COMPUTE_REQUEST_TYPE_INT = 67 // 0x43
 
 task(
-  'send-bundles',
-  'Send Mevshare Bundles for the next 26 blocks',
-  async function (_, hre, _) {
-      	checkChain(hre, SUAVE_CHAIN_ID)
+	'send-bundles',
+	'Send Mevshare Bundles for the next 26 blocks',
+	async function (_taskArgs: any, hre: HRE, _runSuper: any) {
+		checkChain(hre, SUAVE_CHAIN_ID)
 
 		const nBlocks = 2;
-		const executionNodeAddr = getEnvValSafe("EXECUTION_NODE");
-	  	const goerliSigner = makeGoerliSigner();
-	  	const suaveSigner = makeSuaveSigner();
+		const executionNodeAddr = getEnvValSafe('EXECUTION_NODE');
+		const goerliSigner = makeGoerliSigner();
+		const suaveSigner = makeSuaveSigner();
 
-		const res = ethers.utils.defaultAbiCoder.decode(
-			['string'],
-			'0x000000000000000000000000000000000000000000000000000000004210000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000'
-		)
-		console.log(res)
-
-
-		// await sendMevShareBidTxs(suaveSigner, goerliSigner, executionNodeAddr, nBlocks)
-
-  }
+		await sendMevShareBidTxs(hre, suaveSigner, goerliSigner, executionNodeAddr, nBlocks)
+	}
 );
 
 function makeGoerliSigner() {
-	return makeSigner(getEnvValSafe("GOERLI_RPC"), getEnvValSafe("GOERLI_PK"));
+	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'));
 }
 
 function makeSuaveSigner() {
-	return makeSigner(getEnvValSafe("SUAVE_RPC"), getEnvValSafe("SUAVE_PK"));
+	return makeSigner(getEnvValSafe('SUAVE_RPC'), getEnvValSafe('SUAVE_PK'));
 }
 
-function makeSigner(rpcUrl, pk) {
+function makeSigner(rpcUrl: string, pk: string) {
 	const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 	const signer = new ethers.Wallet(pk, provider);
 	return signer
 }
 
 async function sendMevShareBidTxs(
-	suaveSigner,
-	goerliSigner,
-	executionNodeAddr,
-	nBlocks,
+	hre: HRE,
+	suaveSigner: Wallet,
+	goerliSigner: Wallet,
+	executionNodeAddr: string,
+	nBlocks: number,
 ) {
-	const MevShare = await hre.ethers.getContract('MevShare')
-	const Builder = await hre.ethers.getContract('Builder')
-	
+	const MevShare = await (hre.ethers as any).getContract('MevShare')
+	const Builder = await (hre.ethers as any).getContract('Builder')
 	const bundleBytes = await makeDummyBundleBytes(goerliSigner);
 	const confidentialDataBytes = ethers.utils.defaultAbiCoder.encode(['bytes'], [bundleBytes])
 	const confidentialInputsHash = ethers.utils.keccak256(confidentialDataBytes)
@@ -62,16 +56,16 @@ async function sendMevShareBidTxs(
 	console.log('👀 peekers:\n', allowedPeekers)
 	
 	let startingGoerliBlockNum = await getGoerliBlock(goerliSigner.provider);
-	console.log("startingGoerliBlockNum", startingGoerliBlockNum);
+	console.log('startingGoerliBlockNum', startingGoerliBlockNum);
 	for (let blockNum = startingGoerliBlockNum + 1; blockNum < startingGoerliBlockNum + nBlocks; blockNum++) {
 		const calldata = await MevShare.interface.encodeFunctionData('newBid', [blockNum, allowedPeekers])
 		const mevShareTxRlp = await prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, MevShare.address, confidentialInputsHash);
 		
-		console.log("sendMevShareBidTx", "mevShareTx", mevShareTxRlp);
+		console.log('sendMevShareBidTx', 'mevShareTx', mevShareTxRlp);
 
 		const inputBytes = makeConfidentialComputeRequest(mevShareTxRlp, confidentialDataBytes);
 		console.log(inputBytes)
-		const response = await suaveSigner.provider.send('eth_sendRawTransaction', [inputBytes])
+		const response = await (suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
 		console.log(response)
 	}
 
@@ -88,8 +82,8 @@ async function makeDummyTx(signer) {
 	const tx = {
 		from: signer.address,
 		to: signer.address,
-		value: ethers.utils.parseEther("0.0001"),
-		gasPrice: ethers.utils.parseUnits("20", "gwei"),
+		value: ethers.utils.parseEther('0.0001'),
+		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
 		gasLimit: ethers.BigNumber.from(23000),
 		chainId: SUAVE_CHAIN_ID,
 	};
@@ -175,19 +169,17 @@ async function makeConfidentialComputeRecord(
 }
 
 async function getGoerliBlock(goerliProvider) {
-	try {
-		startingGoerliBlockNum = await goerliProvider.getBlockNumber();
-		return startingGoerliBlockNum;
-	} catch (err) {
-		throw new Error(`could not get goerli block: ${err}`);
-	}
+	return goerliProvider.getBlockNumber()
+		.catch(err => {
+			throw new Error(`could not get goerli block: ${err}`);
+		})
 }
 
-function checkChain(hre, desiredChain) {
-  const chainId = hre.network.config.chainId
-      if (chainId != desiredChain) {
-          throw Error(`Skipping deployment, expected Suave chain-id(424242), got ${chainId}`)
-      }
+function checkChain(hre: HRE, desiredChain: number) {
+	const chainId = hre.network.config.chainId
+	if (chainId != desiredChain) {
+		throw Error(`Skipping deployment, expected Suave chain-id(424242), got ${chainId}`)
+	}
 }
 
 function intToHex(intVal) {
