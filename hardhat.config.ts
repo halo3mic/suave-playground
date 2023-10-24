@@ -6,7 +6,7 @@ import 'hardhat-abi-exporter'
 import 'hardhat-tracer'
 import 'hardhat-deploy'
 
-import { getEnvValSafe } from './utils'
+import { getEnvValSafe } from './src/utils'
 import './tasks/send-bundles'
 
 

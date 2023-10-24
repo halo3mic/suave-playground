@@ -1,7 +1,7 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { task } from 'hardhat/config';
 import { ethers, Wallet } from 'ethers';
-import { getEnvValSafe } from '../utils';
+import { getEnvValSafe, intToHex } from '../src/utils';
 
 type HRE = HardhatRuntimeEnvironment;
 
@@ -182,10 +182,3 @@ function checkChain(hre: HRE, desiredChain: number) {
 	}
 }
 
-function intToHex(intVal) {
-	let hex = intVal.toString(16);
-	if (hex.length % 2) {
-		hex = '0' + hex;
-	}
-	return '0x' + hex;
-}

@@ -1,4 +1,30 @@
+import { ethers, BigNumberish } from 'ethers';
 
+
+export function parseHexArg(arg: null | BigNumberish): string {
+    if (!arg) { // 0, null, undefined, ''
+        return '0x';
+    }
+  
+    if (typeof arg === 'object' && 'toHexString' in arg) {
+        const x = arg.toHexString();
+        return x == '0x00' ? '0x' : x;
+    }
+  
+    switch (typeof arg) {
+        case 'number':
+        case 'bigint':
+            return intToHex(arg);
+        case 'string':
+            if (ethers.utils.isHexString(arg)) {
+                return arg;
+            } else {
+                throw new Error(`Invalid hex string: ${arg}`);
+            }
+        default:
+            return '0x';
+    }
+}
 
 export function getEnvValSafe(key: string): string {
     const endpoint = process.env[key]
@@ -29,4 +55,16 @@ export function fetchAbis(): Record<string, string> {
     fetchAbisFromDir(abiDir);
     
     return abis;
+};
+
+export function intToHex(intVal: number | bigint): string {
+	let hex = intVal.toString(16);
+    hex = hex.split('.')[0]
+    if (hex === '0') {
+        return '0x';
+    }
+	if (hex.length % 2) {
+		hex = '0' + hex;
+	}
+	return '0x' + hex;
 };
