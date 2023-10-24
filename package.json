@@ -11,6 +11,7 @@
     "@types/sinon-chai": "^3.2.11",
     "chai": "^4.3.4",
     "dotenv": "^16.3.1",
+    "elliptic": "^6.5.4",
     "ethereum-waffle": "^3.3.0",
     "ethereumjs-util": "^7.0.10",
     "ethers": "^5.7.2",

@@ -18,7 +18,14 @@ task(
 	  	const goerliSigner = makeGoerliSigner();
 	  	const suaveSigner = makeSuaveSigner();
 
-		await sendMevShareBidTxs(suaveSigner, goerliSigner, executionNodeAddr, nBlocks)
+		const res = ethers.utils.defaultAbiCoder.decode(
+			['string'],
+			'0x000000000000000000000000000000000000000000000000000000004210000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000'
+		)
+		console.log(res)
+
+
+		// await sendMevShareBidTxs(suaveSigner, goerliSigner, executionNodeAddr, nBlocks)
 
   }
 );
@@ -127,6 +134,8 @@ function makeConfidentialComputeRequest(
 	confidentialComputeRecord,
 	confidentialDataBytes
 ) {
+	console.log(confidentialComputeRecord)
+	console.log(confidentialDataBytes)
 	const rlpEncoded = ethers.utils.RLP.encode([
 		confidentialComputeRecord,
 		confidentialDataBytes,
@@ -142,6 +151,9 @@ async function makeConfidentialComputeRecord(
 		confidentialInputsHash,
 		confidentialTx,
 	) {
+	console.log(executionNode)
+	console.log(confidentialInputsHash)
+	console.log(confidentialTx)
 	const rlpEncoded = ethers.utils.RLP.encode([
 		intToHex(confidentialTx.nonce), 
 		confidentialTx.gasPrice.toHexString(), 
