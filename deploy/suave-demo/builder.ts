@@ -1,5 +1,5 @@
 import { makeDeployCallback, DeployOptions } from '../deploy-utils'
-import { getEnvValSafe } from '../../utils'
+import { getEnvValSafe } from '../../src/utils'
 
 
 const deployOptions: DeployOptions = {
