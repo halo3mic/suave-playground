@@ -1,6 +1,5 @@
 import { ethers, BigNumberish, Wallet } from 'ethers'
-import { signNoPrefix } from './crypto'
-import { parseHexArg } from './utils'
+import { parseHexArg, keccak256 } from './utils'
 
 
 const CONFIDENTIAL_COMPUTE_RECORD_TYPE = '0x42'
@@ -18,7 +17,7 @@ export class ConfidentialComputeRequest {
 
     rlpEncode(): string {
         const ccr = this.confidentialComputeRecord
-        if (!ccr.confidentialInputsHash || !ccr.v || !ccr.r || !ccr.s) {
+        if (!ccr.confidentialInputsHash || !ccr.r || !ccr.s || !ccr.v) {
             throw new Error('Missing fields')
         }
         const elements = [
@@ -38,26 +37,28 @@ export class ConfidentialComputeRequest {
             ].map(parseHexArg),
             this.confidentialInputs,
         ]
-        const rlpEncoded = CONFIDENTIAL_COMPUTE_REQUEST_TYPE + ethers.utils.RLP.encode(elements).slice(2);
-        return rlpEncoded
+        const rlpEncoded = ethers.utils.RLP.encode(elements).slice(2);
+        const encodedWithPrefix = CONFIDENTIAL_COMPUTE_REQUEST_TYPE + rlpEncoded
+            
+        return encodedWithPrefix
     }
 
-    async sign(pk: string): Promise<ConfidentialComputeRequest> {
-        const hash = this._hash().slice(2)
-        const { v, r, s } = signNoPrefix(hash, pk)
-        this.confidentialComputeRecord.v = v
-        this.confidentialComputeRecord.r = '0x' + r
-        this.confidentialComputeRecord.s = '0x' + s
+    signWithWallet(wallet: Wallet): ConfidentialComputeRequest {
+        const hash = '0x' + this._hash().slice(2)
+        const { recoveryParam: v, s, r } = wallet._signingKey().signDigest(hash)
+        this.confidentialComputeRecord.v = parseHexArg(v)
+        this.confidentialComputeRecord.r = r
+        this.confidentialComputeRecord.s = s
 
         return this
     }
 
-    async signWithWallet(wallet: Wallet): Promise<ConfidentialComputeRequest> {
-        return this.sign(wallet.privateKey)
+    sign(pk: string): ConfidentialComputeRequest {
+        return this.signWithWallet(new Wallet(pk))
     }
 
     _hash(): string {
-        const confidentialInputsHash = ethers.utils.keccak256(this.confidentialInputs)
+        const confidentialInputsHash = keccak256(this.confidentialInputs)
         this.confidentialComputeRecord.confidentialInputsHash = confidentialInputsHash
         const ccr = this.confidentialComputeRecord
 
@@ -71,15 +72,16 @@ export class ConfidentialComputeRequest {
             ccr.value,
             ccr.data,
         ].map(parseHexArg);
-        const rlpEncoded = CONFIDENTIAL_COMPUTE_RECORD_TYPE + ethers.utils.RLP.encode(elements).slice(2)
-        const hash = ethers.utils.keccak256(rlpEncoded)
+        const rlpEncoded = ethers.utils.RLP.encode(elements).slice(2);
+        const encodedWithPrefix = CONFIDENTIAL_COMPUTE_RECORD_TYPE + rlpEncoded
+        const hash = keccak256(encodedWithPrefix)
 
         return hash
     }
 
 }
 
-interface ConfidentialComputeRecord {
+export interface ConfidentialComputeRecord {
     nonce: string | number,
     to: string,
     gas: BigNumberish,

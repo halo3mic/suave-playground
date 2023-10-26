@@ -3,7 +3,6 @@ import { expect } from 'chai'
 import { ethers } from 'hardhat'
 
 import { ConfidentialComputeRequest } from '../src/confidential-types'
-import { signNoPrefix } from '../src/crypto'
 
 
 describe('ConfidentialComputeRequest', async () => {
@@ -22,12 +21,11 @@ describe('ConfidentialComputeRequest', async () => {
         }
         const pk = '1111111111111111111111111111111111111111111111111111111111111111'
 
-        const confidentialRequest = new ConfidentialComputeRequest(confidentialRecord, confidentialInputs)
-        await confidentialRequest.sign(pk)
+        const confidentialRequest = new ConfidentialComputeRequest(confidentialRecord, confidentialInputs).sign(pk)
 
         const filledRecord = confidentialRequest.confidentialComputeRecord
         expect(filledRecord.confidentialInputsHash).to.eq('0x89ee438ca379ac86b0478517d43a6a9e078cf51543acac0facd68aff313e2ff1')
-        expect(filledRecord.v).to.eq(0)
+        expect(filledRecord.v).to.eq('0x')
         expect(filledRecord.r).to.eq('0x1567c31c4bebcd1061edbaf22dd73fd40ff30f9a3ba4525037f23b2dc61e3473')
         expect(filledRecord.s).to.eq('0x2dce69262794a499d525c5d58edde33e06a5847b4d321d396b743700a2fd71a8')
     })
@@ -114,15 +112,5 @@ describe('ConfidentialSigning', () => {
         const hash = ethers.utils.keccak256(confInputs)
         expect(hash).to.eq('0x06fb908c6cb4da7308cdeb2dc4293288dc85dd3ac77c8e0702e923a3b092ea7f')
     })
-
-    it('hash no prefix', () => {
-        const pk = '1111111111111111111111111111111111111111111111111111111111111111'
-        const hash = '4471969c7afbb3b0160786d05184dbacd11ced60bc6f9d531da72644c62bf3f8'
-        const sig = signNoPrefix(hash, pk)
-
-        expect(sig.r).to.equal('227b65043d60411488f0d6a9b5de76238327c8f158515a7767104cb0bc987f31')
-        expect(sig.s).to.equal('5b21f4ef5f6fbaad2e564ae07cefc6594468ab805fe427cb51dd9d14b0123e3e')
-        expect(sig.v).to.equal(0)
-    });
 
 });

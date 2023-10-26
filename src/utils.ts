@@ -1,6 +1,10 @@
 import { ethers, BigNumberish } from 'ethers';
 
 
+export function keccak256(x: string): string {
+    return hexFillZero(ethers.utils.keccak256(x));
+}
+
 export function parseHexArg(arg: null | BigNumberish): string {
     if (!arg) { // 0, null, undefined, ''
         return '0x';
@@ -68,3 +72,10 @@ export function intToHex(intVal: number | bigint): string {
 	}
 	return '0x' + hex;
 };
+
+export function hexFillZero(hex: string): string {
+    if (hex.length % 2 != 0) {
+        hex = '0x0' + hex.slice(2);
+    }
+    return hex;
+}
