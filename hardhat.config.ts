@@ -27,7 +27,7 @@ export default {
   },
   networks: {
     hardhat: {
-      chainId: 424242,
+      chainId: 99999,
       forking: {
         url: SUAVE_RPC, 
       },
