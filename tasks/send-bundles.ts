@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
+import { task, types } from 'hardhat/config';
 import { ethers, Wallet } from 'ethers';
-import { task } from 'hardhat/config';
 
 import { SUAVE_CHAIN_ID } from '../src/const';
 import { 
@@ -10,47 +10,45 @@ import {
 import * as utils from './utils';
 
 
-task(
-	'send-bundles',
-	'Send Mevshare Bundles for the next N blocks',
-	async function (_taskArgs: any, hre: HRE, _runSuper: any) {
+const abis = utils.fetchAbis()
+
+task('send-bundles', 'Send Mevshare Bundles for the next N blocks')
+	.addOptionalParam("nblocks", "Number of blocks to send bundles for. Default is two.", 2, types.int)
+	.addOptionalParam("mevshare", "Address of a MevShare contract. By default fetch most recently deployed one.")
+	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
+	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
 
-		const nBlocks = 2; // todo: use arguments to determine this
-		const executionNodeAddr = utils.getEnvValSafe('EXECUTION_NODE');
-		const goerliSigner = utils.makeGoerliSigner();
-		const suaveSigner = utils.makeSuaveSigner();
+		const config = await getConfig(hre, taskArgs);
+		console.log(`Sending bundles for the next ${config.nBlocks} blocks`)
+		console.log(`Goerli signer: ${config.goerliSigner.address}`)
+		console.log(`Suave signer: ${config.suaveSigner.address}`)
 
-		console.log(`Sending bundles for the next ${nBlocks} blocks`)
-		console.log(`Goerli signer: ${goerliSigner.address} | Suave signer: ${suaveSigner.address}`)
-
-		await sendMevShareBidTxs(hre, suaveSigner, goerliSigner, executionNodeAddr, nBlocks)
-	}
-);
-
-async function sendMevShareBidTxs(
-	hre: HRE,
-	suaveSigner: Wallet,
-	goerliSigner: Wallet,
-	executionNodeAddr: string,
-	nBlocks: number,
-) {
-	const MevShare = await (hre.ethers as any).getContract('MevShare')
-	const Builder = await (hre.ethers as any).getContract('Builder')
-	const confidentialDataBytes = await makeDummyBundleBytes(goerliSigner);
-	const allowedPeekers = [Builder.address, MevShare.address];
+		await sendMevShareBidTxs(config)
+	})
 	
-	let startingGoerliBlockNum = await goerliSigner.provider.getBlockNumber();
-	console.log('startingGoerliBlockNum', startingGoerliBlockNum);
-	for (let blockNum = startingGoerliBlockNum + 1; blockNum < startingGoerliBlockNum + nBlocks; blockNum++) {
-		const calldata = await MevShare.interface.encodeFunctionData('newBid', [blockNum, allowedPeekers])
-		const mevShareCRec = await prepareMevShareBidTx(suaveSigner, calldata, executionNodeAddr, MevShare.address);
+
+async function sendMevShareBidTxs(c: ITaskConfig) {
+	const confidentialDataBytes = await makeDummyBundleBytes(c.goerliSigner);
+	const allowedPeekers = [c.mevshareAdd, c.builderAdd];
+	
+	let startGoerliBlock = await c.goerliSigner.provider.getBlockNumber();
+	console.log('startingGoerliBlockNum', startGoerliBlock);
+	for (let blockNum = startGoerliBlock + 1; blockNum < startGoerliBlock + c.nBlocks; blockNum++) {
+		const calldata = new ethers.utils.Interface(abis['MevShareBidContract'])
+			.encodeFunctionData('newBid', [blockNum, allowedPeekers])
+		const mevShareConfidentialRec = await prepareMevShareBidTx(
+			c.suaveSigner, 
+			calldata, 
+			c.executionNodeAdd, 
+			c.mevshareAdd
+		);
 		
-		const inputBytes = new ConfidentialComputeRequest(mevShareCRec, confidentialDataBytes)
-			.signWithWallet(suaveSigner)
+		const inputBytes = new ConfidentialComputeRequest(mevShareConfidentialRec, confidentialDataBytes)
+			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
 
-		const response = await (suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
+		const response = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
 			.catch(err => {
 				console.log('err', err)
 			})
@@ -101,3 +99,38 @@ async function makeDummyTx(signer) {
 	return parsed;
 }
 
+interface ITaskConfig {
+	nBlocks: number,
+	mevshareAdd: string,
+	builderAdd: string,
+	executionNodeAdd: string,
+	goerliSigner: Wallet,
+	suaveSigner: Wallet,
+}
+
+async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
+	const { nBlocks, mevshareAdd, builderAdd } = await parseTaskArgs(hre, taskArgs)
+	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE');
+	const goerliSigner = utils.makeGoerliSigner();
+	const suaveSigner = utils.makeSuaveSigner();
+	return {
+		nBlocks,
+		mevshareAdd,
+		builderAdd,
+		executionNodeAdd,
+		goerliSigner,
+		suaveSigner,
+	}
+}
+
+async function parseTaskArgs(hre: HRE, taskArgs: any) {
+	const nBlocks = parseInt(taskArgs.nblocks);
+	const mevshareAdd = taskArgs.mevshare
+		? taskArgs.mevshare
+		: await utils.fetchDeployedContract(hre, 'MevShare').then(c => c.address)
+	const builderAdd = taskArgs.mevshare
+		? taskArgs.mevshare
+		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
+
+	return { nBlocks, mevshareAdd, builderAdd }
+}

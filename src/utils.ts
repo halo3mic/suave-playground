@@ -55,7 +55,7 @@ export function fetchAbis(): Record<string, string> {
         })
     }
 
-    const abiDir: string = path.join(__dirname, './abi');
+    const abiDir: string = path.join(__dirname, '../abi');
     fetchAbisFromDir(abiDir);
     
     return abis;
