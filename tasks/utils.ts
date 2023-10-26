@@ -1,7 +1,7 @@
 import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
 import { ethers } from 'ethers';
 
-import { getEnvValSafe, parseHexArg } from '../src/utils';
+import { getEnvValSafe, parseHexArg, fetchAbis } from '../src/utils';
 
 
 export interface IBundle {
@@ -77,6 +77,10 @@ export async function signTransactionNonRlp(signer, tx) {
 	return ethers.utils.parseTransaction(rlpSigned);
 }
 
+export async function fetchDeployedContract(hre: HRE, deploymentName: string) {
+	return (hre.ethers as any).getContract(deploymentName) 
+}
+
 export function checkChain(hre: HRE, desiredChain: number) {
 	const chainId = hre.network.config.chainId
 	if (chainId != desiredChain) {
@@ -84,4 +88,4 @@ export function checkChain(hre: HRE, desiredChain: number) {
 	}
 }
 
-export { getEnvValSafe };
+export { getEnvValSafe, fetchAbis };
