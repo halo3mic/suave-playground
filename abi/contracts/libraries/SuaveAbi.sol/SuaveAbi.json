@@ -202,6 +202,11 @@
             "type": "bytes16"
           },
           {
+            "internalType": "Suave.BidId",
+            "name": "salt",
+            "type": "bytes16"
+          },
+          {
             "internalType": "uint64",
             "name": "decryptionCondition",
             "type": "uint64"
@@ -209,6 +214,11 @@
           {
             "internalType": "address[]",
             "name": "allowedPeekers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedStores",
             "type": "address[]"
           },
           {
@@ -238,6 +248,11 @@
         "type": "address[]"
       },
       {
+        "internalType": "address[]",
+        "name": "allowedStores",
+        "type": "address[]"
+      },
+      {
         "internalType": "string",
         "name": "BidType",
         "type": "string"
@@ -253,6 +268,11 @@
             "type": "bytes16"
           },
           {
+            "internalType": "Suave.BidId",
+            "name": "salt",
+            "type": "bytes16"
+          },
+          {
             "internalType": "uint64",
             "name": "decryptionCondition",
             "type": "uint64"
@@ -260,6 +280,11 @@
           {
             "internalType": "address[]",
             "name": "allowedPeekers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedStores",
             "type": "address[]"
           },
           {

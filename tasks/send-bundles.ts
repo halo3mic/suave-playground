@@ -29,14 +29,16 @@ task('send-bundles', 'Send Mevshare Bundles for the next N blocks')
 	
 
 async function sendMevShareBidTxs(c: ITaskConfig) {
+	const mevshareInterface = new ethers.utils.Interface(abis['MevShareBidContract'])
 	const confidentialDataBytes = await makeDummyBundleBytes(c.goerliSigner);
 	const allowedPeekers = [c.mevshareAdd, c.builderAdd];
+	const allowedStores = [];
 	
 	let startGoerliBlock = await c.goerliSigner.provider.getBlockNumber();
 	console.log('startingGoerliBlockNum', startGoerliBlock);
 	for (let blockNum = startGoerliBlock + 1; blockNum < startGoerliBlock + c.nBlocks; blockNum++) {
-		const calldata = new ethers.utils.Interface(abis['MevShareBidContract'])
-			.encodeFunctionData('newBid', [blockNum, allowedPeekers])
+		const calldata = mevshareInterface
+			.encodeFunctionData('newBid', [blockNum, allowedPeekers, allowedStores])
 		const mevShareConfidentialRec = await prepareMevShareBidTx(
 			c.suaveSigner, 
 			calldata, 
@@ -50,9 +52,10 @@ async function sendMevShareBidTxs(c: ITaskConfig) {
 
 		const response = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
 			.catch(err => {
-				console.log('err', err)
+				console.log('err submitting tx', err)
 			})
-		console.log(response)
+		console.log(`tx: ${response}`)
+		await handleNewSubmission(c.suaveSigner.provider, mevshareInterface, response)
 	}
 
 }
@@ -98,6 +101,30 @@ async function makeDummyTx(signer) {
 	const parsed = utils.parseTx(signed);
 	return parsed;
 }
+
+async function handleNewSubmission(provider, mevshareInterface, txHash) {
+	const receipt = await provider.waitForTransaction(txHash)
+	if (receipt.status === 0) {
+		console.log(`⛔️ tx failed`)
+		console.log(`${JSON.stringify(receipt)}`)
+	} else {
+		const tab = n => '  '.repeat(n)
+		console.log(`\n✅ tx succeeded`)
+		receipt.logs.forEach(log => {
+			const parsedLog = mevshareInterface.parseLog(log);
+			console.log(`${tab(1)}${parsedLog.name}`)
+			parsedLog.eventFragment.inputs.forEach((input, i) => {
+				if (parsedLog.name == "HintEvent" && input.name == "hint") {
+					const hintTo = parsedLog.args[i].slice(0, 43)
+					const hintData = '0x' + parsedLog.args[i].slice(43)
+					console.log(`${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}`)
+				} else {
+					console.log(`${tab(2)}${input.name}: ${parsedLog.args[i]}`)
+				}
+			})
+		})
+	}
+} 
 
 interface ITaskConfig {
 	nBlocks: number,
