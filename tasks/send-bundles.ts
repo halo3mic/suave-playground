@@ -36,7 +36,7 @@ async function sendMevShareBidTxs(c: ITaskConfig) {
 	
 	let startGoerliBlock = await c.goerliSigner.provider.getBlockNumber();
 	console.log('startingGoerliBlockNum', startGoerliBlock);
-	for (let blockNum = startGoerliBlock + 1; blockNum < startGoerliBlock + c.nBlocks; blockNum++) {
+	for (let blockNum = startGoerliBlock + 1; blockNum < startGoerliBlock + c.nBlocks + 1; blockNum++) {
 		const calldata = mevshareInterface
 			.encodeFunctionData('newBid', [blockNum, allowedPeekers, allowedStores])
 		const mevShareConfidentialRec = await prepareMevShareBidTx(
