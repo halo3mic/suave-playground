@@ -69,6 +69,19 @@
   },
   {
     "inputs": [],
+    "name": "ETHCALL",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "EXTRACT_HINT",
     "outputs": [
       {
