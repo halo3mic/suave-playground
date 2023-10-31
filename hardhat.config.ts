@@ -8,6 +8,7 @@ import 'hardhat-deploy'
 
 import { getEnvValSafe } from './src/utils'
 import './tasks/send-bundles'
+import './tasks/build-blocks'
 
 
 dconfig()
