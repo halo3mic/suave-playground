@@ -5,7 +5,7 @@ import { getEnvValSafe, parseHexArg, fetchAbis } from '../src/utils';
 
 
 export interface IBundle {
-	txs: Array<any>,
+	txs: Array<string>,
 	revertingHashes: Array<string>,
 }
 
@@ -86,6 +86,10 @@ export function checkChain(hre: HRE, desiredChain: number) {
 	if (chainId != desiredChain) {
 		throw Error(`Expected Suave chain-id(${desiredChain}), got ${chainId}`)
 	}
+}
+
+export function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export { getEnvValSafe, fetchAbis };
