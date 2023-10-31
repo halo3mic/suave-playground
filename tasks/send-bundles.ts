@@ -10,10 +10,14 @@ import {
 import * as utils from './utils';
 
 
+const precompiles = { // todo: move
+	buildEthBlock: '0x0000000000000000000000000000000042100001'
+}
+
 const abis = utils.fetchAbis()
 
 task('send-bundles', 'Send Mevshare Bundles for the next N blocks')
-	.addOptionalParam("nblocks", "Number of blocks to send bundles for. Default is two.", 2, types.int)
+	.addOptionalParam("nblocks", "Number of blocks to send bundles for. Default is two.", 1, types.int)
 	.addOptionalParam("mevshare", "Address of a MevShare contract. By default fetch most recently deployed one.")
 	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
 	.setAction(async function (taskArgs: any, hre: HRE) {
@@ -31,7 +35,7 @@ task('send-bundles', 'Send Mevshare Bundles for the next N blocks')
 async function sendMevShareBidTxs(c: ITaskConfig) {
 	const mevshareInterface = new ethers.utils.Interface(abis['MevShareBidContract'])
 	const confidentialDataBytes = await makeDummyBundleBytes(c.goerliSigner);
-	const allowedPeekers = [c.mevshareAdd, c.builderAdd];
+	const allowedPeekers = [c.mevshareAdd, c.builderAdd, precompiles.buildEthBlock];
 	const allowedStores = [];
 	
 	let startGoerliBlock = await c.goerliSigner.provider.getBlockNumber();
@@ -97,9 +101,8 @@ async function makeDummyTx(signer) {
 		gasLimit: '0x59d8',
 		chainId: 5,
 	};
-	const signed = await utils.signTransactionNonRlp(signer, tx);
-	const parsed = utils.parseTx(signed);
-	return parsed;
+	const signed = await signer.signTransaction(tx);
+	return signed;
 }
 
 async function handleNewSubmission(provider, mevshareInterface, txHash) {
