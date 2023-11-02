@@ -5,7 +5,7 @@ import { getEnvValSafe } from '../../src/utils'
 const deployOptions: DeployOptions = {
     name: 'Builder', 
     contractName: 'EthBlockBidSenderContract', 
-    args: [ getEnvValSafe('GOERLI_RELAY_URL') ], 
+    args: [ getEnvValSafe('GOERLI_RELAY') ], 
     tags: [ 'builder' ]
 };
 
