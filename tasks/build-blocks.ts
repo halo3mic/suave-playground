@@ -28,10 +28,10 @@ task('build-blocks', 'Build blocks and send them to relay')
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		
-		await beingBlockBuilding(config)
+		await beginBlockBuilding(config)
 	})
 
-async function beingBlockBuilding(c: ITaskConfig) {
+async function beginBlockBuilding(c: ITaskConfig) {
 	const paListener = new BeaconPAListener()
 
 	for (let i=0; i < c.nSlots; i++) {
