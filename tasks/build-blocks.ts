@@ -151,8 +151,8 @@ async function handleNewSubmission(provider, txHash): Promise<string> {
 		output += `\t❗️ Block building failed`
 		output += `\n\t${JSON.stringify(receipt)}`
 	} else {
-		const tab = n => '  '.repeat(n)
-		output += `\n✅ Block building succeeded\n`
+		const tab = n => '\t  '.repeat(n)
+		output += `\n\t✅ Block building succeeded\n`
 		receipt.logs.forEach(log => {
 			const parsedLog = builderInterface.parseLog(log);
 			output += `${tab(1)}${parsedLog.name}\n`
@@ -172,12 +172,12 @@ function handleErr(err): string {
 			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
 		if (revertMsg.startsWith('0x75fff467')) {
 			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-			return `❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
+			return `\t❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
 		} else {
-			return `❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+			return `\t❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
 		}
 	} else {
-		return `❗️ ` + rpcErr
+		return `\t❗️ ` + rpcErr
 	}
 }
 

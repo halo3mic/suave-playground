@@ -30,6 +30,7 @@ task('submit-and-build', 'Submit bids, build blocks and send them to relay')
 
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
+		console.log(`Goerli signer: ${config.goerliSigner.address}`)
 		
 		await beginBlockBuilding(config)
 	})
@@ -38,7 +39,6 @@ async function beginBlockBuilding(c: ITaskConfig) {
 	const paListener = new BeaconPAListener()
 	let lastNextBlock = null
 	for (let i=0; i < c.nSlots; i++) {
-		console.log()	
 		const payload = await paListener.waitForNextSlot()
 		const validator = await getValidatorForSlot(c.relayUrl, payload.data.proposal_slot)
 		if (validator === null) {
@@ -54,7 +54,7 @@ async function beginBlockBuilding(c: ITaskConfig) {
 			const [success, err] = await submitBid(c, nextBlockNum, validator.feeRecipient)
 			if (success) {
 				console.log("✅")
-				success.then(console.log)
+				await success.then(console.log) // wait for tx to prevent nonce issues
 			} else {
 				console.log('❌')
 				console.log(err)

@@ -162,12 +162,12 @@ function handleErr(err): string {
 			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
 		if (revertMsg.startsWith('0x75fff467')) {
 			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-			return `❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
+			return `\t❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
 		} else {
-			return `❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+			return `\t❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
 		}
 	} else {
-		return `❗️ ` + rpcErr
+		return `\t❗️ ` + rpcErr
 	}
 }
 
