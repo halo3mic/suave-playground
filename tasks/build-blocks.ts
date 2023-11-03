@@ -16,6 +16,7 @@ import {
 } from './beacon';
 
 
+type Result<T> = [T, null] | [null, string]
 const abis = utils.fetchAbis()
 
 task('build-blocks', 'Build blocks and send them to relay')
@@ -43,29 +44,27 @@ async function beginBlockBuilding(c: ITaskConfig) {
 		}
 		const buildBlockArgs = makeBuildBlockArgs(payload.data, validator)
 		const nextBlockNum = payload.data.parent_block_number + 1
-		await buildBlock(c, buildBlockArgs, nextBlockNum)
+		const [success, err] = await buildBlock(c, buildBlockArgs, nextBlockNum)
+		if (err) {
+			console.log(err)
+		} else {
+			await success.then(console.log)
+		}
 	}
 	
 }
 
-async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHeight: number): Promise<void> {
-	console.log(bbArgs)
+export async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHeight: number): Promise<Result<Promise<string>>> {
 	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight);
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfRec, '0x')
 			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
 
-	const [res, err] = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
-		.then(r => [r, null])
-		.catch(err => [null, err])
+	const result = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
+		.then(r => [handleNewSubmission(c.suaveSigner.provider, r), null])
+		.catch(err => [null, handleErr(err)])
 
-	if (err) {
-		handleErr(err)
-	} else {
-		console.log(`tx: ${res}`)
-		const receipt = await c.suaveSigner.provider.waitForTransaction(res)
-		console.log(receipt)
-	}
+	return result
 }
 
 async function makeBlockBuildConfRec(
@@ -121,7 +120,7 @@ interface Withdrawal {
 	amount: number;
 }
 
-function makeBuildBlockArgs(beacon: BeaconEventData, validator: ValidatorMsg): BuildBlockArgs {
+export function makeBuildBlockArgs(beacon: BeaconEventData, validator: ValidatorMsg): BuildBlockArgs {
 	const withdrawals = beacon.payload_attributes.withdrawals.map(w => {
 		return {
 			index: w.index,
@@ -141,6 +140,45 @@ function makeBuildBlockArgs(beacon: BeaconEventData, validator: ValidatorMsg): B
 		proposerPubkey: validator.pubkey,
 	}
 	
+}
+
+async function handleNewSubmission(provider, txHash): Promise<string> {
+	const builderInterface = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+	const receipt = await provider.waitForTransaction(txHash, 1)
+
+	let output = `\tBuild tx ${txHash} confirmed:`
+	if (receipt.status === 0) {
+		output += `\t❗️ Block building failed`
+		output += `\n\t${JSON.stringify(receipt)}`
+	} else {
+		const tab = n => '  '.repeat(n)
+		output += `\n✅ Block building succeeded\n`
+		receipt.logs.forEach(log => {
+			const parsedLog = builderInterface.parseLog(log);
+			output += `${tab(1)}${parsedLog.name}\n`
+			parsedLog.eventFragment.inputs.forEach((input, i) => {
+				output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
+			})
+		})
+	}
+	return output + '\n'
+} 
+
+function handleErr(err): string {
+	const rpcErr = JSON.parse(err.body)?.error?.message
+	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
+		const revertMsg = rpcErr.slice('execution reverted: '.length)
+		const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
+		if (revertMsg.startsWith('0x75fff467')) {
+			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
+			return `❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
+		} else {
+			return `❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+		}
+	} else {
+		return `❗️ ` + rpcErr
+	}
 }
 
 interface ITaskConfig {
@@ -175,22 +213,4 @@ async function parseTaskArgs(hre: HRE, taskArgs: any) {
 		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
 
 	return { nSlots, builderAdd }
-}
-
-function handleErr(err) {
-	const rpcErr = JSON.parse(err.body)?.error?.message
-	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
-		const revertMsg = rpcErr.slice('execution reverted: '.length)
-		const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
-			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
-		if (revertMsg.startsWith('0x75fff467')) {
-			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-			console.log(`❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`)
-		} else {
-			console.log(decodedErr)
-		}
-		console.log(rpcErr)
-	} else {
-		console.log(rpcErr)
-	}
 }

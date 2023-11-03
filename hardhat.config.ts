@@ -9,6 +9,7 @@ import 'hardhat-deploy'
 import { getEnvValSafe } from './src/utils'
 import './tasks/send-bundles'
 import './tasks/build-blocks'
+import './tasks/submit-and-build'
 
 
 dconfig()
@@ -20,23 +21,13 @@ const GOERLI_RPC = getEnvValSafe("GOERLI_RPC");
 
 export default {
   solidity: "0.8.8",
-  defaultNetwork: 'hardhat',
+  defaultNetwork: 'suave',
   namedAccounts: {
     deployer: {
       default: 0,
     }
   },
   networks: {
-    hardhat: {
-      chainId: 99999,
-      forking: {
-        url: SUAVE_RPC, 
-      },
-      accounts: {
-        accountsBalance: "10000000000000000000000000", 
-        count: 100
-      }
-    }, 
     suave: {
       chainId: 424242,
       gasPrice: 0,

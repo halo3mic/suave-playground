@@ -92,4 +92,22 @@ export function sleep(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+export async function getNextBaseFee(provider: ethers.providers.Provider) {
+    const latestBlock = await provider.getBlock("latest");
+
+    const baseFeePerGas = latestBlock.baseFeePerGas;
+    const gasUsed = ethers.BigNumber.from(latestBlock.gasUsed);
+    const gasLimit = ethers.BigNumber.from(latestBlock.gasLimit);
+
+    const BASE_FEE_MAX_CHANGE_DENOMINATOR = ethers.BigNumber.from(8);
+    const ELASTICITY_MULTIPLIER = ethers.BigNumber.from(2);
+
+    const gasTarget = gasLimit.div(ELASTICITY_MULTIPLIER);
+    const delta = gasUsed.sub(gasTarget).mul(baseFeePerGas).div(gasTarget).div(BASE_FEE_MAX_CHANGE_DENOMINATOR);
+
+    const nextBaseFee = baseFeePerGas.add(delta);
+
+    return nextBaseFee;
+}
+
 export { getEnvValSafe, fetchAbis };
