@@ -1,10 +1,9 @@
 # 🚧 Suave Playground 🏗️
 
-This project is under development
-
-
 
 ## Setup
+
+Follow [SETUP.md](./docs/SETUP.md) to setup your environment.
 
 ### Dependencies
 ```
