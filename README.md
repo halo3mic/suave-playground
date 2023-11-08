@@ -38,10 +38,7 @@ This account will represent your Suave execution node
 $ ./build/bin/geth account new --datadir $SUAVE_DATADIR
 # Note that default `datadir` is `~/.ethereum`.
 ```
-Write password to `./password`
-```
-$ echo "<account password>" > ./password
-```
+Save password in `./password`
 
 #### Genesis file
 
