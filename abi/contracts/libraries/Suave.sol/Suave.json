@@ -108,6 +108,19 @@
   },
   {
     "inputs": [],
+    "name": "FILL_MEV_SHARE_BUNDLE",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "IS_CONFIDENTIAL_ADDR",
     "outputs": [
       {
@@ -134,7 +147,33 @@
   },
   {
     "inputs": [],
+    "name": "SIGN_ETH_TRANSACTION",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "SIMULATE_BUNDLE",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SUBMIT_BUNDLE_JSON_RPC",
     "outputs": [
       {
         "internalType": "address",

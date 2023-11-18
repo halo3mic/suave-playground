@@ -44,7 +44,7 @@ async function beginBlockBuilding(c: ITaskConfig) {
 		}
 		const buildBlockArgs = makeBuildBlockArgs(payload.data, validator)
 		const nextBlockNum = payload.data.parent_block_number + 1
-		const [success, err] = await buildBlock(c, buildBlockArgs, nextBlockNum)
+		const [success, err] = await buildBlock(c, buildBlockArgs, nextBlockNum, null)
 		if (err) {
 			console.log(err)
 		} else {
@@ -54,12 +54,11 @@ async function beginBlockBuilding(c: ITaskConfig) {
 	
 }
 
-export async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHeight: number): Promise<Result<Promise<string>>> {
-	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight);
+export async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHeight: number, suaveNonce: number): Promise<Result<Promise<string>>> {
+	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, suaveNonce);
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfRec, '0x')
 			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
-
 	const result = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
 		.then(r => [handleNewSubmission(c.suaveSigner.provider, r), null])
 		.catch(err => [null, handleErr(err)])
@@ -70,16 +69,18 @@ export async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHe
 async function makeBlockBuildConfRec(
 	c: ITaskConfig,
 	bbArgs: BuildBlockArgs,
-	blockHeight: number
+	blockHeight: number, 
+	suaveNonce: number
 ): Promise<ConfidentialComputeRecord> {
 	const calldata = buildMevShareCalldata(bbArgs, blockHeight);
-	const nonce = await c.suaveSigner.getTransactionCount();
+	if (!suaveNonce)
+		suaveNonce = await c.suaveSigner.getTransactionCount();
 	return {
 		chainId: SUAVE_CHAIN_ID,
-		nonce,
+		nonce: suaveNonce,
 		to: c.builderAdd,
 		value: ethers.utils.parseEther('0'),
-		gas: ethers.BigNumber.from(10000000),
+		gas: ethers.BigNumber.from(2000000),
 		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
 		data: calldata, 
 		executionNode: c.executionNodeAdd,
@@ -87,7 +88,7 @@ async function makeBlockBuildConfRec(
 }
 
 function buildMevShareCalldata(bbArgs: BuildBlockArgs, blockHeight: number) {
-	const mevshareInterface = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+	const mevshareInterface = new ethers.utils.Interface(abis['BlockAdAuction'])
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,
@@ -97,6 +98,8 @@ function buildMevShareCalldata(bbArgs: BuildBlockArgs, blockHeight: number) {
 		bbArgs.gasLimit,
 		bbArgs.random,
 		bbArgs.withdrawals.map(w => [ w.index, w.validator, w.address, w.amount ]),
+		'0x0000000000000000000000000000000000000000000000000000000000000000'
+
 	]
 	const calldata = mevshareInterface.encodeFunctionData('buildMevShare', [blockArgs, blockHeight])
 	return calldata
@@ -143,7 +146,7 @@ export function makeBuildBlockArgs(beacon: BeaconEventData, validator: Validator
 }
 
 async function handleNewSubmission(provider, txHash): Promise<string> {
-	const builderInterface = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+	const builderInterface = new ethers.utils.Interface(abis['BlockAdAuction'])
 	const receipt = await provider.waitForTransaction(txHash, 1)
 
 	let output = `\tBuild tx ${txHash} confirmed:`
@@ -168,7 +171,7 @@ function handleErr(err): string {
 	const rpcErr = JSON.parse(err.body)?.error?.message
 	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
 		const revertMsg = rpcErr.slice('execution reverted: '.length)
-		const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+		const decodedErr = new ethers.utils.Interface(abis['BlockAdAuction'])
 			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
 		if (revertMsg.startsWith('0x75fff467')) {
 			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
@@ -208,9 +211,9 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const nSlots = parseInt(taskArgs.nslots);
-	const builderAdd = taskArgs.mevshare
+	const builderAdd = taskArgs.mevshare /// todo: fix this
 		? taskArgs.mevshare
-		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
+		: await utils.fetchDeployedContract(hre, 'BlockAdAuction').then(c => c.address)
 
 	return { nSlots, builderAdd }
 }

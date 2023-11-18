@@ -12,6 +12,7 @@ import * as utils from './utils';
 export type Result<T> = [T, null] | [null, string]
 const abis = utils.fetchAbis()
 const mevshareInterface = new ethers.utils.Interface(abis['MevShareBidContract'])
+const adbidInterface = new ethers.utils.Interface(abis['BlockAdAuction'])
 
 
 task('send-bundles', 'Send Mevshare Bundles for the next N blocks')
@@ -37,7 +38,7 @@ async function sendMevShareBidTxs(c: ITaskConfig) {
 	
 	let startGoerliBlock = await c.goerliSigner.provider.getBlockNumber();
 	console.log('startingGoerliBlockNum', startGoerliBlock);
-	for (let blockNum = startGoerliBlock + 1; blockNum < startGoerliBlock + c.nBlocks + 1; blockNum++) {
+	for (let blockNum = startGoerliBlock + 2; blockNum < startGoerliBlock + c.nBlocks + 1; blockNum++) {
 		let [success, err] = await sendBidForBlock(
 			c.suaveSigner, 
 			c.executionNodeAdd, 
@@ -45,7 +46,8 @@ async function sendMevShareBidTxs(c: ITaskConfig) {
 			confidentialDataBytes, 
 			blockNum, 
 			allowedPeekers, 
-			allowedStores
+			allowedStores, 
+			null
 		)
 		if (err) {
 			console.log(err)
@@ -64,6 +66,7 @@ export async function sendBidForBlock(
 	blockNum: number, 
 	allowedPeekers: string[], 
 	allowedStores: string[],
+	suaveNonce: number,
 ): Promise<Result<Promise<string>>> {
 	const calldata = mevshareInterface
 			.encodeFunctionData('newBid', [blockNum, allowedPeekers, allowedStores])
@@ -71,10 +74,44 @@ export async function sendBidForBlock(
 		suaveSigner, 
 		calldata, 
 		executionNodeAdd, 
-		mevshareAdd
+		mevshareAdd, 
+		suaveNonce
 	);
+	// console.log(mevShareConfidentialRec)
 	
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfidentialRec, confidentialDataBytes)
+		.signWithWallet(suaveSigner)
+		.rlpEncode()
+
+	const result = await (suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
+		.then(r => [handleNewSubmission(suaveSigner.provider, r), null])
+		.catch(err => [null, handleErr(err)])
+
+	return result
+}
+
+export async function sendAdForBlock(
+	suaveSigner: Wallet, 
+	executionNodeAdd: string,
+	adbuilderAdd: string, 
+	blockStart: number, 
+	range: number,
+	adBid: number,
+	extra: string, 
+	suaveNonce: number,
+): Promise<Result<Promise<string>>> {
+	const calldata = adbidInterface
+			.encodeFunctionData('buyAd', [blockStart, range, extra, adBid])
+	const mevShareConfidentialRec = await prepareMevShareBidTx(
+		suaveSigner, 
+		calldata, 
+		executionNodeAdd, 
+		adbuilderAdd,
+		suaveNonce
+	);
+	
+	// todo: add tx to confidential inputs
+	const inputBytes = new ConfidentialComputeRequest(mevShareConfidentialRec, "0x")
 		.signWithWallet(suaveSigner)
 		.rlpEncode()
 
@@ -95,15 +132,17 @@ async function prepareMevShareBidTx(
 	suaveSigner, 
 	calldata, 
 	executionNodeAddr, 
-	mevShareAddr
+	mevShareAddr, 
+	suaveNonce
 ): Promise<ConfidentialComputeRecord> {
-	const nonce = await suaveSigner.getTransactionCount();
+	if (!suaveNonce)
+		suaveNonce = await suaveSigner.getTransactionCount();
 	return {
 		chainId: SUAVE_CHAIN_ID,
-		nonce,
+		nonce: suaveNonce,
 		to: mevShareAddr,
 		value: ethers.utils.parseEther('0'),
-		gas: ethers.BigNumber.from(10000000),
+		gas: ethers.BigNumber.from(2000000),
 		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
 		data: calldata, 
 		executionNode: executionNodeAddr,
@@ -127,8 +166,8 @@ async function makeDummyTx(signer) {
 
 async function handleNewSubmission(provider, txHash): Promise<string> {
 	const mevshareInterface = new ethers.utils.Interface(abis['MevShareBidContract'])
+	const adbidInterface = new ethers.utils.Interface(abis['BlockAdAuction'])
 	const receipt = await provider.waitForTransaction(txHash, 1)
-
 	let output = `\tBid tx ${txHash} confirmed:`
 	if (receipt.status === 0) {
 		output += `\t❌ Bid submission failed`
@@ -137,17 +176,37 @@ async function handleNewSubmission(provider, txHash): Promise<string> {
 		const tab = n => '\t  '.repeat(n)
 		output += `\n\t✅ Bid submission succeeded\n`
 		receipt.logs.forEach(log => {
-			const parsedLog = mevshareInterface.parseLog(log);
-			output += `${tab(1)}${parsedLog.name}\n`
-			parsedLog.eventFragment.inputs.forEach((input, i) => {
-				if (parsedLog.name == "HintEvent" && input.name == "hint") {
-					const hintTo = parsedLog.args[i].slice(0, 43)
-					const hintData = '0x' + parsedLog.args[i].slice(43)
-					output += `${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}\n`
-				} else {
-					output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
+			try {
+				const parsedLog = mevshareInterface.parseLog(log);
+				output += `${tab(1)}${parsedLog.name}\n`
+				parsedLog.eventFragment.inputs.forEach((input, i) => {
+					if (parsedLog.name == "HintEvent" && input.name == "hint") {
+						const hintTo = parsedLog.args[i].slice(0, 43)
+						const hintData = '0x' + parsedLog.args[i].slice(43)
+						output += `${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}\n`
+					} else {
+						output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
+					}
+				})
+			} catch {
+				try {
+					const parsedLog = adbidInterface.parseLog(log);
+					output += `${tab(1)}${parsedLog.name}\n`
+					parsedLog.eventFragment.inputs.forEach((input, i) => {
+						if (parsedLog.name == "HintEvent" && input.name == "hint") {
+							const hintTo = parsedLog.args[i].slice(0, 43)
+							const hintData = '0x' + parsedLog.args[i].slice(43)
+							output += `${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}\n`
+						} else {
+							output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
+						}
+					})
+				} catch {
+					output += `${tab(1)}${log.topics[0]}\n`
+					output += `${tab(2)}${log.data}\n`
 				}
-			})
+			}
+
 		})
 	}
 
@@ -158,17 +217,18 @@ function handleErr(err): string {
 	const rpcErr = JSON.parse(err.body)?.error?.message
 	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
 		const revertMsg = rpcErr.slice('execution reverted: '.length)
-		const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
-			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
-		if (revertMsg.startsWith('0x75fff467')) {
-			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-			return `\t❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
-		} else {
-			return `\t❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+		if (revertMsg != '0x') {
+			const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+				.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
+			if (revertMsg.startsWith('0x75fff467')) {
+				const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
+				return `\t❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
+			} else {
+				return `\t❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+			}
 		}
-	} else {
-		return `\t❗️ ` + rpcErr
 	}
+	return `\t❗️ ` + rpcErr
 }
 
 interface ITaskConfig {
@@ -202,7 +262,7 @@ async function parseTaskArgs(hre: HRE, taskArgs: any) {
 		: await utils.fetchDeployedContract(hre, 'MevShare').then(c => c.address)
 	const builderAdd = taskArgs.mevshare
 		? taskArgs.mevshare
-		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
+		: await utils.fetchDeployedContract(hre, 'BlockAdAuction').then(c => c.address)
 
 	return { nBlocks, mevshareAdd, builderAdd }
 }
