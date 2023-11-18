@@ -80,6 +80,11 @@
             "internalType": "struct Suave.Withdrawal[]",
             "name": "withdrawals",
             "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "extra",
+            "type": "bytes32"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -238,6 +243,25 @@
   {
     "inputs": [
       {
+        "internalType": "Suave.BidId",
+        "name": "bidId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "fillMevShareBundle",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint64",
         "name": "decryptionCondition",
         "type": "uint64"
@@ -305,6 +329,35 @@
     "inputs": [
       {
         "internalType": "bytes",
+        "name": "txn",
+        "type": "bytes"
+      },
+      {
+        "internalType": "string",
+        "name": "chainId",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "signingKey",
+        "type": "string"
+      }
+    ],
+    "name": "signEthTransaction",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
         "name": "bundleData",
         "type": "bytes"
       }
@@ -315,6 +368,35 @@
         "internalType": "uint64",
         "name": "",
         "type": "uint64"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "url",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "method",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes",
+        "name": "params",
+        "type": "bytes"
+      }
+    ],
+    "name": "submitBundleJsonRPC",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
       }
     ],
     "stateMutability": "view",
