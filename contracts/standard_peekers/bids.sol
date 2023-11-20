@@ -34,8 +34,8 @@ contract BundleBidContract is AnyBidContract {
 
 		Suave.Bid memory bid = Suave.newBid(decryptionCondition, bidAllowedPeekers, bidAllowedStores, "default:v0:ethBundles");
 
-		Suave.confidentialStoreStore(bid.id, "default:v0:ethBundles", bundleData);
-		Suave.confidentialStoreStore(bid.id, "default:v0:ethBundleSimResults", abi.encode(egp));
+		Suave.confidentialStore(bid.id, "default:v0:ethBundles", bundleData);
+		Suave.confidentialStore(bid.id, "default:v0:ethBundleSimResults", abi.encode(egp));
 
 		return emitAndReturn(bid, bundleData);
 	}
@@ -89,8 +89,8 @@ contract MevShareBidContract is AnyBidContract {
 		
 		// // 4. store bundle and sim results
 		Suave.Bid memory bid = Suave.newBid(decryptionCondition, bidAllowedPeekers, bidAllowedStores, "mevshare:v0:unmatchedBundles");
-		Suave.confidentialStoreStore(bid.id, "mevshare:v0:ethBundles", bundleData);
-		Suave.confidentialStoreStore(bid.id, "mevshare:v0:ethBundleSimResults", abi.encode(egp));
+		Suave.confidentialStore(bid.id, "mevshare:v0:ethBundles", bundleData);
+		Suave.confidentialStore(bid.id, "mevshare:v0:ethBundleSimResults", abi.encode(egp));
 		emit BidEvent(bid.id, bid.decryptionCondition, bid.allowedPeekers);
 		emit HintEvent(bid.id, hint);
 
@@ -118,14 +118,14 @@ contract MevShareBidContract is AnyBidContract {
 		bytes memory matchHint = Suave.extractHint(matchBundleData);
 		
 		Suave.Bid memory bid = Suave.newBid(decryptionCondition, bidAllowedPeekers, bidAllowedStores, "mevshare:v0:matchBids");
-		Suave.confidentialStoreStore(bid.id, "mevshare:v0:ethBundles", matchBundleData);
-		Suave.confidentialStoreStore(bid.id, "mevshare:v0:ethBundleSimResults", abi.encode(0));
+		Suave.confidentialStore(bid.id, "mevshare:v0:ethBundles", matchBundleData);
+		Suave.confidentialStore(bid.id, "mevshare:v0:ethBundleSimResults", abi.encode(0));
 
 		//4. merge bids
 		Suave.BidId[] memory bids = new Suave.BidId[](2);
 		bids[0] = shareBidId;
 		bids[1] = bid.id;
-		Suave.confidentialStoreStore(bid.id, "mevshare:v0:mergedBids", abi.encode(bids));
+		Suave.confidentialStore(bid.id, "mevshare:v0:mergedBids", abi.encode(bids));
 
 		return emitMatchBidAndHint(bid, matchHint);
 	}
@@ -195,7 +195,7 @@ contract EthBlockBidContract is AnyBidContract {
 			Suave.Bid memory bidToInsert = allShareUserBids[i]; // will be updated with the best match if any
 			for (uint j = 0; j < allShareMatchBids.length; j++) {
 				// TODO: should be done once at the start and sorted
-				Suave.BidId[] memory mergedBidIds = abi.decode(Suave.confidentialStoreRetrieve(allShareMatchBids[j].id, "mevshare:v0:mergedBids"), (Suave.BidId[]));
+				Suave.BidId[] memory mergedBidIds = abi.decode(Suave.confidentialRetrieve(allShareMatchBids[j].id, "mevshare:v0:mergedBids"), (Suave.BidId[]));
 				if (idsEqual(mergedBidIds[0], allShareUserBids[i].id)) {
 					bidToInsert = allShareMatchBids[j];
 					break;
@@ -206,7 +206,7 @@ contract EthBlockBidContract is AnyBidContract {
 
 		EgpBidPair[] memory bidsByEGP = new EgpBidPair[](allBids.length);
 		for (uint i = 0; i < allBids.length; i++) {
-			bytes memory simResults = Suave.confidentialStoreRetrieve(allBids[i].id, "mevshare:v0:ethBundleSimResults");
+			bytes memory simResults = Suave.confidentialRetrieve(allBids[i].id, "mevshare:v0:ethBundleSimResults");
 			uint64 egp = abi.decode(simResults, (uint64));
 			bidsByEGP[i] = EgpBidPair(egp, allBids[i].id);
 		}
@@ -241,7 +241,7 @@ contract EthBlockBidContract is AnyBidContract {
 
 		EgpBidPair[] memory bidsByEGP = new EgpBidPair[](allBids.length);
 		for (uint i = 0; i < allBids.length; i++) {
-			bytes memory simResults = Suave.confidentialStoreRetrieve(allBids[i].id, "default:v0:ethBundleSimResults");
+			bytes memory simResults = Suave.confidentialRetrieve(allBids[i].id, "default:v0:ethBundleSimResults");
 			uint64 egp = abi.decode(simResults, (uint64));
 			bidsByEGP[i] = EgpBidPair(egp, allBids[i].id);
 		}
@@ -282,10 +282,10 @@ contract EthBlockBidContract is AnyBidContract {
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
 
 		Suave.Bid memory blockBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, "default:v0:mergedBids");
-		Suave.confidentialStoreStore(blockBid.id, "default:v0:mergedBids", abi.encode(bids));
+		Suave.confidentialStore(blockBid.id, "default:v0:mergedBids", abi.encode(bids));
 		 
 		(bytes memory builderBid, bytes memory payload) = Suave.buildEthBlock(blockArgs, blockBid.id, namespace);
-		Suave.confidentialStoreStore(blockBid.id, "default:v0:builderPayload", payload); // only through this.unlock
+		Suave.confidentialStore(blockBid.id, "default:v0:builderPayload", payload); // only through this.unlock
 
 		return (blockBid, builderBid);
 	}
@@ -301,7 +301,7 @@ contract EthBlockBidContract is AnyBidContract {
 
 		// TODO: verify the header is correct
 		// TODO: incorporate protocol name
-		bytes memory payload = Suave.confidentialStoreRetrieve(bidId, "default:v0:builderPayload");
+		bytes memory payload = Suave.confidentialRetrieve(bidId, "default:v0:builderPayload");
 		return payload;
 	}
 }
@@ -323,8 +323,6 @@ contract EthBlockBidSenderContract is EthBlockBidContract {
 		return bytes.concat(this.emitBid.selector, abi.encode(blockBid));
 	}
 }
-
-
 
 struct AdBid {
 	string extra; 
@@ -373,7 +371,7 @@ contract BlockAdAuction is EthBlockBidContract {
 			Suave.Bid memory blockBid = Suave.newBid(b, a, a, "default:v0:adauction1");
 			AdBid memory adbid = AdBid(extra, blockBid.id, bidAmount, b);
 			bids[b-blockStart] = adbid;
-			Suave.confidentialStoreStore(blockBid.id, "default:v0:adauction1", abi.encode(adbid));
+			Suave.confidentialStore(blockBid.id, "default:v0:adauction1", abi.encode(adbid));
 		}
 
 		return abi.encodeWithSelector(this.buyAdCallback.selector, bids);
@@ -398,7 +396,7 @@ contract BlockAdAuction is EthBlockBidContract {
 
 		AdBid memory bestBid;
 		for (uint i = 0; i < blockBids.length; i++) {
-			bytes memory bidBytes = Suave.confidentialStoreRetrieve(blockBids[i].bidId, "default:v0:adauction1");
+			bytes memory bidBytes = Suave.confidentialRetrieve(blockBids[i].bidId, "default:v0:adauction1");
 			AdBid memory bid = abi.decode(bidBytes, (AdBid));
 			if (bid.egp > bestBid.egp)
 				bestBid = bid;
@@ -407,9 +405,9 @@ contract BlockAdAuction is EthBlockBidContract {
 		// return bytes.concat(this.emitBid.selector, abi.encode(bid));
 		delete blockToBid[blockHeight];
 
-		blockArgs.extra = bytes32(uint(255));
+		// blockArgs.extra = uintToBytes(255);
 		if (bestBid.egp > 0) {
-			blockArgs.extra = stringToBytes32(bestBid.extra);
+			blockArgs.extra = bytes(bestBid.extra);
 		}
 
 		(Suave.Bid memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
@@ -427,10 +425,21 @@ contract BlockAdAuction is EthBlockBidContract {
 	// 	}
 	// }
 
-	function stringToBytes32(string memory source) public pure returns (bytes32 result) {
-        assembly {
-            result := mload(add(source, 32))
-        }
-    }
+	// function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+    //     assembly {
+    //         result := mload(add(source, 32))
+    //     }
+    // }
+
+	// function stringToBytes(string memory str) public pure returns (bytes memory) {
+	// 	return bytes(str);
+	// }
+
+	function uintToBytes(uint x) internal pure returns(bytes memory y) {
+		assembly {
+			mstore(y, 0x20)
+			mstore(add(y, 0x20), x)
+		}
+	}
 
 }
