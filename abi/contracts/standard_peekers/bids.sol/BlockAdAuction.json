@@ -220,9 +220,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -323,9 +323,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -416,9 +416,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -578,9 +578,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -821,25 +821,6 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "source",
-        "type": "string"
-      }
-    ],
-    "name": "stringToBytes32",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "result",
-        "type": "bytes32"
       }
     ],
     "stateMutability": "pure",

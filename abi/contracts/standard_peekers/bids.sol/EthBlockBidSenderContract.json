@@ -137,9 +137,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -240,9 +240,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -333,9 +333,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -426,9 +426,9 @@
             "type": "tuple[]"
           },
           {
-            "internalType": "bytes32",
+            "internalType": "bytes",
             "name": "extra",
-            "type": "bytes32"
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",

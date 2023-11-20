@@ -17,6 +17,19 @@
   },
   {
     "inputs": [],
+    "name": "ANYALLOWED",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "BUILD_ETH_BLOCK",
     "outputs": [
       {
@@ -43,7 +56,7 @@
   },
   {
     "inputs": [],
-    "name": "CONFIDENTIAL_STORE_RETRIEVE",
+    "name": "CONFIDENTIAL_RETRIEVE",
     "outputs": [
       {
         "internalType": "address",
@@ -56,7 +69,7 @@
   },
   {
     "inputs": [],
-    "name": "CONFIDENTIAL_STORE_STORE",
+    "name": "CONFIDENTIAL_STORE",
     "outputs": [
       {
         "internalType": "address",
