@@ -46,12 +46,6 @@
         "internalType": "uint256",
         "name": "blockNum",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
       }
     ],
     "name": "AdBidEvent",
@@ -140,9 +134,9 @@
         "type": "bytes16"
       },
       {
-        "internalType": "uint64",
-        "name": "egp",
-        "type": "uint64"
+        "internalType": "Suave.BidId",
+        "name": "bundleBidId",
+        "type": "bytes16"
       },
       {
         "internalType": "uint256",
@@ -458,11 +452,6 @@
         "internalType": "string",
         "name": "extra",
         "type": "string"
-      },
-      {
-        "internalType": "uint64",
-        "name": "bidAmount",
-        "type": "uint64"
       }
     ],
     "name": "buyAd",
@@ -491,9 +480,9 @@
             "type": "bytes16"
           },
           {
-            "internalType": "uint64",
-            "name": "egp",
-            "type": "uint64"
+            "internalType": "Suave.BidId",
+            "name": "bundleBidId",
+            "type": "bytes16"
           },
           {
             "internalType": "uint256",
