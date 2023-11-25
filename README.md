@@ -135,7 +135,7 @@ $ npx hardhat build-blocks --nslots <number_of_slots>
 
 #### Submit Ad bid, build block and broadcast it to the relay
 ```
-$ npx hardhat adblock --nslots <number_of_slots> --extra "<ad_content>" --adbid <eth_bid_amount> --build
+$ npx hardhat block-ad --nslots <number_of_slots> --extra "<ad_content>" --adbid <eth_bid_amount> --build
 ```
 
 
