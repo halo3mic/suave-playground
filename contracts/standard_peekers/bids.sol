@@ -161,6 +161,7 @@ struct EgpBidPair {
 	Suave.BidId bidId;
 }
 
+// todo: instead of inherit interact with deployed builder contract
 contract EthBlockBidContract is AnyBidContract {
 
 	event BuilderBoostBidEvent(
@@ -180,7 +181,7 @@ contract EthBlockBidContract is AnyBidContract {
 		return true;
 	}
 
-	function buildMevShare(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight) public returns (bytes memory) {
+	function buildMevShare(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight) public virtual returns (bytes memory) {
 		require(Suave.isConfidential());
 		Suave.Bid[] memory allShareMatchBids = Suave.fetchBids(blockHeight, "mevshare:v0:matchBids");
 		Suave.Bid[] memory allShareUserBids = Suave.fetchBids(blockHeight, "mevshare:v0:unmatchedBundles");
@@ -327,51 +328,47 @@ contract EthBlockBidSenderContract is EthBlockBidContract {
 struct AdBid {
 	string extra; 
 	Suave.BidId bidId;
-	uint64 egp;
+	Suave.BidId bundleBidId;
 	uint blockHeight;
 }
 
-contract BlockAdAuction is EthBlockBidContract {
-
+contract BlockAdAuction is EthBlockBidSenderContract {
 
 	event AdBidEvent(
 		Suave.BidId bidId,
 		string extra,
-		uint blockNum,
-		uint bidAmount
+		uint blockNum
 	);
-
-	string boostRelayUrl;
 
 	uint public bidCount = 0;
 	mapping(uint => AdBid[]) public blockToBid;
 
-	constructor(string memory boostRelayUrl_) {
-		boostRelayUrl = boostRelayUrl_;
+	// todo: association instead of inheritance
+	constructor(string memory boostRelayUrl_) EthBlockBidSenderContract(boostRelayUrl_) {
 	}
 
 	function buyAd(
 		uint64 blockStart, 
 		uint64 range, 
-		string memory extra, 
-		uint64 bidAmount
+		string memory extra
 	) external returns (bytes memory) {
 		require(Suave.isConfidential(), "Not confidential");
-		// todo: are bids stored via goerli number right?
-		// uint64 egp = Suave.simulateBundle(bundlePayment);
-		// todo: check valid sim
-		// require(egp != 0, "Sim failed");
-		// todo: check it is a transfer
+
+		bytes memory bundleData = this.fetchBidConfidentialBundleData();
+		require(Suave.simulateBundle(bundleData) != 0, "Sim failed");
 		
+		address[] memory allowedPeekers = new address[](1);
+		allowedPeekers[0] = address(this);
 		AdBid[] memory bids = new AdBid[](range);
 
 		for (uint64 b = blockStart; b < blockStart+range; b++) {
-			address[] memory a = new address[](1);
-			a[0] = address(this); 
-			Suave.Bid memory blockBid = Suave.newBid(b, a, a, "default:v0:adauction1");
-			AdBid memory adbid = AdBid(extra, blockBid.id, bidAmount, b);
+			Suave.Bid memory paymentBid = Suave.newBid(0, allowedPeekers, allowedPeekers, "blockad:v0:paymentBundle");
+			Suave.confidentialStore(paymentBid.id, "blockad:v0:paymentBundle", bundleData); // todo: really need to store bundle for each block?
+
+			Suave.Bid memory blockBid = Suave.newBid(b, allowedPeekers, allowedPeekers, "blockad:v0:bid");
+			AdBid memory adbid = AdBid(extra, blockBid.id, paymentBid.id, b); // todo: this egp is irrelevant as you don't know what the final one will be - it could cause confusion or be maliclious
+			Suave.confidentialStore(blockBid.id, "blockad:v0:bid", abi.encode(adbid)); // todo: store only paymentBid and extra
 			bids[b-blockStart] = adbid;
-			Suave.confidentialStore(blockBid.id, "default:v0:adauction1", abi.encode(adbid));
 		}
 
 		return abi.encodeWithSelector(this.buyAdCallback.selector, bids);
@@ -382,11 +379,12 @@ contract BlockAdAuction is EthBlockBidContract {
 		for (uint i = 0; i < bids.length; i++) {
 			uint blockNum = bids[i].blockHeight;
 			blockToBid[blockNum].push(bids[i]);
-			emit AdBidEvent(bids[i].bidId, bids[i].extra, blockNum, bids[i].egp);
+			emit AdBidEvent(bids[i].bidId, bids[i].extra, blockNum);
 		}
 	}
 
-	function buildAndEmit(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight, Suave.BidId[] memory bids, string memory namespace) public virtual override returns (bytes memory) {
+	// todo: builder retains the payment instead of sending all to the validator
+	function buildMevShare(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight) public override returns (bytes memory) {
 		require(Suave.isConfidential());
 
 		AdBid[] storage blockBids = blockToBid[blockHeight];
@@ -394,52 +392,45 @@ contract BlockAdAuction is EthBlockBidContract {
 			revert Suave.PeekerReverted(address(this), "no ads");
 		}
 
+		// todo: compact this in a struct
 		AdBid memory bestBid;
+		uint64 bestEgp;
+		bytes memory bestPaymentBundle;
 		for (uint i = 0; i < blockBids.length; i++) {
-			bytes memory bidBytes = Suave.confidentialRetrieve(blockBids[i].bidId, "default:v0:adauction1");
+			bytes memory bidBytes = Suave.confidentialRetrieve(blockBids[i].bidId, "blockad:v0:bid");
 			AdBid memory bid = abi.decode(bidBytes, (AdBid));
-			if (bid.egp > bestBid.egp)
+			bytes memory paymentBundle = Suave.confidentialRetrieve(bid.bundleBidId, "blockad:v0:paymentBundle");
+			uint64 egp = Suave.simulateBundle(paymentBundle);
+			if (egp > bestEgp) {
+				bestEgp = egp;
 				bestBid = bid;
+				bestPaymentBundle = paymentBundle;
+			}
+			// todo: if egp == 0, delete all of their bids for the next blocks (when someone wins an ad, discard their subsequent(pending) bids)
 		}
-		// Suave.Bid memory bid = Suave.newBid(blockHeight, new address[](0), new address[](0), "mevshare:v0:unmatchedBundles");
-		// return bytes.concat(this.emitBid.selector, abi.encode(bid));
+
 		delete blockToBid[blockHeight];
 
-		// blockArgs.extra = uintToBytes(255);
-		if (bestBid.egp > 0) {
+		if (bestEgp > 0) {
 			blockArgs.extra = bytes(bestBid.extra);
 		}
 
-		(Suave.Bid memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
-		Suave.submitEthBlockBidToRelay(boostRelayUrl, builderBid);
+		// Expect the payment on top; if someone wants to fail the payment with subsequent txs they have to have higher egp than the payment tx
+		address[] memory allowedPeekers = new address[](2);
+		allowedPeekers[0] = address(this);
+		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
+		Suave.Bid memory paymentBundleBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, "mevshare:v0:unmatchedBundles");
+		Suave.confidentialStore(paymentBundleBid.id, "mevshare:v0:ethBundles", bestPaymentBundle);
+		Suave.confidentialStore(paymentBundleBid.id, "mevshare:v0:ethBundleSimResults", abi.encode(bestEgp));
 
-		emit BidEvent(blockBid.id, blockBid.decryptionCondition, blockBid.allowedPeekers);
-		return bytes.concat(this.emitBid.selector, abi.encode(blockBid));
+		return EthBlockBidContract.buildMevShare(blockArgs, blockHeight); // todo: build normal block instead of mevshare
 	}
 
-	// function bytesToBytes32(bytes memory a) pure internal returns(bytes32 b) {
+	// function uintToBytes(uint x) internal pure returns(bytes memory y) {
 	// 	assembly {
-	// 		let m := mload(0x40)
-	// 		mstore(add(m, 0x20), a)
-	// 		b := mload(add(m, 0x20))
+	// 		mstore(y, 0x20)
+	// 		mstore(add(y, 0x20), x)
 	// 	}
 	// }
-
-	// function stringToBytes32(string memory source) public pure returns (bytes32 result) {
-    //     assembly {
-    //         result := mload(add(source, 32))
-    //     }
-    // }
-
-	// function stringToBytes(string memory str) public pure returns (bytes memory) {
-	// 	return bytes(str);
-	// }
-
-	function uintToBytes(uint x) internal pure returns(bytes memory y) {
-		assembly {
-			mstore(y, 0x20)
-			mstore(add(y, 0x20), x)
-		}
-	}
 
 }

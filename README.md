@@ -113,25 +113,31 @@ Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the follo
 
 #### Deploy Builder and MevShare contracts
 ```
-npx hardhat deploy --tags builder,mevshare
+$ npx hardhat deploy --tags builder,mevshare,adbuilder
 ```
 
 #### Send bids, build blocks and broadcast them to the relay
 
 Combined (recommended)
 ```
-$ npx hardhat submit-and-build --nslots <num of slots to bid for>
+$ npx hardhat send-bundles --nslots <number_of_slots> --build
 ```
 
 Only send bundles
 ```
-npx hardhat send-bundles --nblocks <num of blocks to send bids for>
+$ npx hardhat send-bundles --nslots <number_of_slots>
 ```
 
 Only build blocks
 ```
-npx hardhat build-blocks --nslots <num of slots to bid for>
+$ npx hardhat build-blocks --nslots <number_of_slots>
 ```
+
+#### Submit Ad bid, build block and broadcast it to the relay
+```
+$ npx hardhat adblock --nslots <number_of_slots> --extra "<ad_content>" --adbid <eth_bid_amount> --build
+```
+
 
 ## Contributions
 Please feel free to contribute, let's build together! 💪
