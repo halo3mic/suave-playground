@@ -1,5 +1,5 @@
+import { parseHexArg, keccak256, hexFillZero } from './utils'
 import { ethers, BigNumberish, Wallet } from 'ethers'
-import { parseHexArg, keccak256 } from './utils'
 
 
 const CONFIDENTIAL_COMPUTE_RECORD_TYPE = '0x42'
@@ -47,8 +47,8 @@ export class ConfidentialComputeRequest {
         const hash = '0x' + this._hash().slice(2)
         const { recoveryParam: v, s, r } = wallet._signingKey().signDigest(hash)
         this.confidentialComputeRecord.v = parseHexArg(v)
-        this.confidentialComputeRecord.r = r
-        this.confidentialComputeRecord.s = s
+        this.confidentialComputeRecord.r = hexFillZero(r)
+        this.confidentialComputeRecord.s = hexFillZero(s)
 
         return this
     }
