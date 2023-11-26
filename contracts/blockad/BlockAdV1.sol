@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { AnyBidContract, EthBlockBidSenderContract, Suave } from "./bids.sol";
+import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
 
 
 contract BlockAdAuctionV1 is AnyBidContract {
