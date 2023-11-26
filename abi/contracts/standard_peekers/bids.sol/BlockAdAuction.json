@@ -31,12 +31,6 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "Suave.BidId",
-        "name": "bidId",
-        "type": "bytes16"
-      },
-      {
-        "indexed": false,
         "internalType": "string",
         "name": "extra",
         "type": "string"
@@ -77,38 +71,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "Suave.BidId",
-        "name": "bidId",
-        "type": "bytes16"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "builderBid",
-        "type": "bytes"
-      }
-    ],
-    "name": "BuilderBoostBidEvent",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "bidCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -130,12 +92,7 @@
       },
       {
         "internalType": "Suave.BidId",
-        "name": "bidId",
-        "type": "bytes16"
-      },
-      {
-        "internalType": "Suave.BidId",
-        "name": "bundleBidId",
+        "name": "paymentBidId",
         "type": "bytes16"
       },
       {
@@ -227,19 +184,9 @@
         "internalType": "uint64",
         "name": "blockHeight",
         "type": "uint64"
-      },
-      {
-        "internalType": "Suave.BidId[]",
-        "name": "bids",
-        "type": "bytes16[]"
-      },
-      {
-        "internalType": "string",
-        "name": "namespace",
-        "type": "string"
       }
     ],
-    "name": "buildAndEmit",
+    "name": "buildBlock",
     "outputs": [
       {
         "internalType": "bytes",
@@ -251,189 +198,16 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "slot",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes",
-            "name": "proposerPubkey",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "parent",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint64",
-            "name": "timestamp",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address",
-            "name": "feeRecipient",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "gasLimit",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "random",
-            "type": "bytes32"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint64",
-                "name": "index",
-                "type": "uint64"
-              },
-              {
-                "internalType": "uint64",
-                "name": "validator",
-                "type": "uint64"
-              },
-              {
-                "internalType": "address",
-                "name": "Address",
-                "type": "address"
-              },
-              {
-                "internalType": "uint64",
-                "name": "amount",
-                "type": "uint64"
-              }
-            ],
-            "internalType": "struct Suave.Withdrawal[]",
-            "name": "withdrawals",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bytes",
-            "name": "extra",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct Suave.BuildBlockArgs",
-        "name": "blockArgs",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint64",
-        "name": "blockHeight",
-        "type": "uint64"
-      }
-    ],
-    "name": "buildFromPool",
+    "inputs": [],
+    "name": "builder",
     "outputs": [
       {
-        "internalType": "bytes",
+        "internalType": "contract EthBlockBidSenderContract",
         "name": "",
-        "type": "bytes"
+        "type": "address"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "slot",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes",
-            "name": "proposerPubkey",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "parent",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint64",
-            "name": "timestamp",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address",
-            "name": "feeRecipient",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "gasLimit",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "random",
-            "type": "bytes32"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint64",
-                "name": "index",
-                "type": "uint64"
-              },
-              {
-                "internalType": "uint64",
-                "name": "validator",
-                "type": "uint64"
-              },
-              {
-                "internalType": "address",
-                "name": "Address",
-                "type": "address"
-              },
-              {
-                "internalType": "uint64",
-                "name": "amount",
-                "type": "uint64"
-              }
-            ],
-            "internalType": "struct Suave.Withdrawal[]",
-            "name": "withdrawals",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bytes",
-            "name": "extra",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct Suave.BuildBlockArgs",
-        "name": "blockArgs",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint64",
-        "name": "blockHeight",
-        "type": "uint64"
-      }
-    ],
-    "name": "buildMevShare",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -476,12 +250,7 @@
           },
           {
             "internalType": "Suave.BidId",
-            "name": "bidId",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "Suave.BidId",
-            "name": "bundleBidId",
+            "name": "paymentBidId",
             "type": "bytes16"
           },
           {
@@ -490,7 +259,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct AdBid[]",
+        "internalType": "struct BlockAdAuction.AdBid[]",
         "name": "bids",
         "type": "tuple[]"
       }
@@ -498,146 +267,6 @@
     "name": "buyAdCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint64",
-            "name": "slot",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes",
-            "name": "proposerPubkey",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "parent",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint64",
-            "name": "timestamp",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address",
-            "name": "feeRecipient",
-            "type": "address"
-          },
-          {
-            "internalType": "uint64",
-            "name": "gasLimit",
-            "type": "uint64"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "random",
-            "type": "bytes32"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint64",
-                "name": "index",
-                "type": "uint64"
-              },
-              {
-                "internalType": "uint64",
-                "name": "validator",
-                "type": "uint64"
-              },
-              {
-                "internalType": "address",
-                "name": "Address",
-                "type": "address"
-              },
-              {
-                "internalType": "uint64",
-                "name": "amount",
-                "type": "uint64"
-              }
-            ],
-            "internalType": "struct Suave.Withdrawal[]",
-            "name": "withdrawals",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bytes",
-            "name": "extra",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct Suave.BuildBlockArgs",
-        "name": "blockArgs",
-        "type": "tuple"
-      },
-      {
-        "internalType": "uint64",
-        "name": "blockHeight",
-        "type": "uint64"
-      },
-      {
-        "internalType": "Suave.BidId[]",
-        "name": "bids",
-        "type": "bytes16[]"
-      },
-      {
-        "internalType": "string",
-        "name": "namespace",
-        "type": "string"
-      }
-    ],
-    "name": "doBuild",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "Suave.BidId",
-            "name": "id",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "Suave.BidId",
-            "name": "salt",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "uint64",
-            "name": "decryptionCondition",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedPeekers",
-            "type": "address[]"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedStores",
-            "type": "address[]"
-          },
-          {
-            "internalType": "string",
-            "name": "version",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Suave.Bid",
-        "name": "",
-        "type": "tuple"
-      },
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -686,99 +315,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "Suave.BidId",
-            "name": "id",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "Suave.BidId",
-            "name": "salt",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "uint64",
-            "name": "decryptionCondition",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedPeekers",
-            "type": "address[]"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedStores",
-            "type": "address[]"
-          },
-          {
-            "internalType": "string",
-            "name": "version",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Suave.Bid",
-        "name": "bid",
-        "type": "tuple"
-      },
-      {
-        "internalType": "bytes",
-        "name": "builderBid",
-        "type": "bytes"
-      }
-    ],
-    "name": "emitBuilderBidAndBid",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "Suave.BidId",
-            "name": "id",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "Suave.BidId",
-            "name": "salt",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "uint64",
-            "name": "decryptionCondition",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedPeekers",
-            "type": "address[]"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedStores",
-            "type": "address[]"
-          },
-          {
-            "internalType": "string",
-            "name": "version",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Suave.Bid",
-        "name": "",
-        "type": "tuple"
-      },
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "fetchBidConfidentialBundleData",
     "outputs": [
@@ -789,54 +325,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Suave.BidId",
-        "name": "_l",
-        "type": "bytes16"
-      },
-      {
-        "internalType": "Suave.BidId",
-        "name": "_r",
-        "type": "bytes16"
-      }
-    ],
-    "name": "idsEqual",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Suave.BidId",
-        "name": "bidId",
-        "type": "bytes16"
-      },
-      {
-        "internalType": "bytes",
-        "name": "signedBlindedHeader",
-        "type": "bytes"
-      }
-    ],
-    "name": "unlock",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ]

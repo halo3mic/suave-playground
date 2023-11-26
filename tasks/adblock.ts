@@ -52,7 +52,10 @@ async function submitAndBuild(c: ITaskConfig) {
 		builderAdd: c.adauctionAdd,
 		nSlots: c.nSlots,
 	}
-	await doBlockBuilding(buildConfig, { precall, iface: adbidInterface })
+	await doBlockBuilding(
+		buildConfig,
+		{ precall, iface: adbidInterface, method: 'buildBlock' }
+	)
 }
 
 async function submitAdBid(c: ITaskConfig): Promise<boolean> {

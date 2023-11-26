@@ -113,7 +113,7 @@ Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the follo
 
 #### Deploy Builder and MevShare contracts
 ```
-$ npx hardhat deploy --tags builder,mevshare,adbuilder
+$ npx hardhat deploy --tags builder,mevshare,blockad
 ```
 
 #### Send bids, build blocks and broadcast them to the relay

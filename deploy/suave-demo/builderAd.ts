@@ -6,7 +6,7 @@ const deployOptions: DeployOptions = {
     name: 'BlockAdAuction', 
     contractName: 'BlockAdAuction', 
     args: [ getEnvValSafe('GOERLI_RELAY') ], 
-    tags: [ 'adbuilder' ]
+    tags: [ 'blockad' ]
 };
 
 module.exports = makeDeployCallback(deployOptions)

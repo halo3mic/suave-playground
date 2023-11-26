@@ -58,7 +58,7 @@ export async function doBlockBuilding(c: ITaskConfig, opt?: IBuildOptions) {
 
 		const buildBlockArgs = makeBuildBlockArgs(payload.data, validator)
 		const nextBlockNum = payload.data.parent_block_number + 1
-		await build(c, buildBlockArgs, nextBlockNum)
+		await build(c, buildBlockArgs, nextBlockNum, opt)
 	}
 	
 }
@@ -88,8 +88,7 @@ export async function buildBlock(
 	blockHeight: number,
 	bopt: IBuildOptions = null
 ): Promise<utils.Result<Promise<string>>> {
-	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, bopt?.method);
-	console.log(mevShareConfRec)
+	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, bopt?.iface, bopt?.method);
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfRec, '0x')
 			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
@@ -102,9 +101,10 @@ async function makeBlockBuildConfRec(
 	c: ITaskConfig,
 	bbArgs: BuildBlockArgs,
 	blockHeight: number,
+	iface: ethers.utils.Interface = null,
 	method: string = null
 ): Promise<ConfidentialComputeRecord> {
-	const calldata = makeCalldata(bbArgs, blockHeight, method);
+	const calldata = makeCalldata(bbArgs, blockHeight, iface, method);
 	return utils.createConfidentialComputeRecord(
 		c.suaveSigner, 
 		calldata, 
@@ -113,7 +113,12 @@ async function makeBlockBuildConfRec(
 	)
 }
 
-function makeCalldata(bbArgs: BuildBlockArgs, blockHeight: number, method?: string) {
+function makeCalldata(
+	bbArgs: BuildBlockArgs, 
+	blockHeight: number,
+	iface?: ethers.utils.Interface, 
+	method?: string
+) {
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,
@@ -127,7 +132,9 @@ function makeCalldata(bbArgs: BuildBlockArgs, blockHeight: number, method?: stri
 	]
 	if (!method)
 		method = 'buildMevShare'
-	const calldata = builderInterface.encodeFunctionData(method, [blockArgs, blockHeight])
+	if (!iface)
+		iface = builderInterface
+	const calldata = iface.encodeFunctionData(method, [blockArgs, blockHeight])
 	return calldata
 }
 
