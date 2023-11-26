@@ -2,7 +2,7 @@
 // Author: Miha Lotric (halo3mic)
 pragma solidity ^0.8.8;
 
-import { AnyBidContract, EthBlockBidSenderContract, Suave } from "./bids.sol";
+import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
 
 
 contract BlockAdAuctionV2 is AnyBidContract {
