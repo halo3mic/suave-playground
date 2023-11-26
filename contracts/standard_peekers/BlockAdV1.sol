@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import { AnyBidContract, EthBlockBidSenderContract, Suave } from "./bids.sol";
 
 
-contract BlockAdAuction is AnyBidContract {
+contract BlockAdAuctionV1 is AnyBidContract {
 
 	struct AdBid {
 		string extra; 

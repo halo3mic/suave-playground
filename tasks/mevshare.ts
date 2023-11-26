@@ -16,10 +16,10 @@ import * as utils from './utils';
 const mevshareInterface = utils.getInterface('MevShareBidContract')
 
 task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
-	.addOptionalParam("nslots", "Number of blocks to send bundles for. Default is two.", 1, types.int)
-	.addOptionalParam("mevshare", "Address of a MevShare contract. By default fetch most recently deployed one.")
-	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
-	.addFlag("build", "Whether to build blocks or not")
+	.addOptionalParam('nslots', 'Number of blocks to send bundles for. Default is two.', 1, types.int)
+	.addOptionalParam('mevshare', 'Address of a MevShare contract. By default fetch most recently deployed one.')
+	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
+	.addFlag('build', 'Whether to build blocks or not')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
 
@@ -73,7 +73,7 @@ export async function submitMevShareBid(c: ITaskConfig, blockNum?: number): Prom
 		allowedPeekers,
 	)
 	if (s) {
-		console.log("✅")
+		console.log('✅')
 		await s.then(console.log)
 		return true
 	} else {
