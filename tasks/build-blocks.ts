@@ -25,8 +25,8 @@ interface IBuildOptions {
 const builderInterface = utils.getInterface('EthBlockBidSenderContract')
 
 task('build-blocks', 'Build blocks and send them to relay')
-	.addOptionalParam("nslots", "Number of slots to build blocks for. Default is two.", 1, types.int)
-	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
+	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
+	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
 		const config = await getConfig(hre, taskArgs);
@@ -69,10 +69,10 @@ async function build(
 	blockHeight: number,
 	bopt: IBuildOptions = null
 ): Promise<boolean> {
-	process.stdout.write(`👷‍ Building block for slot ${bbArgs.slot} (block ${blockHeight})`)
+	process.stdout.write(`👷‍ Building block for slot ${bbArgs.slot} (block ${blockHeight})... `)
 	const [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
 	if (s) {
-		console.log("✅")
+		console.log('✅')
 		await s.then(console.log)
 		return true
 	} else {
@@ -93,7 +93,7 @@ export async function buildBlock(
 			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
 	const iface = bopt?.iface || builderInterface
-	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, "BlockBuilding")
+	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'BlockBuilding')
 	return result
 }
 
