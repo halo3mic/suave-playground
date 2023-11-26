@@ -159,7 +159,7 @@ export async function getNextBaseFee(provider: ethers.providers.Provider) {
 export async function submitRawTxPrettyRes(
 	provider: ethers.providers.Provider, 
 	inputBytes: string, 
-	iface: any, 
+	iface: ethers.utils.Interface, 
 	label?: string
 ): Promise<Result<Promise<string>>> {
 	label = label ? `'${label}'` : ''
