@@ -153,7 +153,7 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export async function getNextBaseFee(provider: ethers.providers.Provider) {
-    return provider.getBlock("pending").then(b => b.baseFeePerGas)
+    return provider.getBlock('pending').then(b => b.baseFeePerGas)
 }
 
 export async function submitRawTxPrettyRes(
@@ -182,7 +182,7 @@ export async function handleNewSubmission(iface: any, provider: any, txHash: str
 				const parsedLog = iface.parseLog(log);
 				output += `${tab(1)}${parsedLog.name}\n`
 				parsedLog.eventFragment.inputs.forEach((input, i) => {
-					if (parsedLog.name == "HintEvent" && input.name == "hint") {
+					if (parsedLog.name == 'HintEvent' && input.name == 'hint') {
 						const hintTo = parsedLog.args[i].slice(0, 43)
 						const hintData = '0x' + parsedLog.args[i].slice(43)
 						output += `${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}\n`
@@ -207,11 +207,15 @@ export function handleSubmissionErr(iface: any, err: any, label: string): string
 		const revertMsg = rpcErr.slice('execution reverted: '.length)
 		if (revertMsg != '0x') {
 			const decodedErr = iface.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
-			if (revertMsg.startsWith('0x75fff467')) {
-				const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-				return `\t❗️ ${label} PeekerReverted(${decodedErr[0]}, '${errStr})'`
-			} else {
-				return `\t❗️ ${label} ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+			// todo: find err from interface obj
+			switch (revertMsg.slice(0, 10)) {
+				case '0x75fff467':
+					const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
+					return `\t❗️ ${label} PeekerReverted(${decodedErr[0]}, '${errStr})'`
+				case '0x9433d94b':
+					return `\t❗️ ${label} BlockAdAuctionError('${decodedErr[0]}')`
+				default:
+					return `\t❗️ ${label} ` + rpcErr + '\n Params: ' + decodedErr.join(',')
 			}
 		}
 	}

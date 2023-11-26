@@ -3,8 +3,8 @@ import { getEnvValSafe } from '../../src/utils'
 
 
 const deployOptions: DeployOptions = {
-    name: 'BlockAdAuction', 
-    contractName: 'BlockAdAuction', 
+    name: 'BlockAdAuctionV2', 
+    contractName: 'BlockAdAuctionV2', 
     args: [ getEnvValSafe('GOERLI_RELAY') ], 
     tags: [ 'blockad' ]
 };

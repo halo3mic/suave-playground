@@ -12,16 +12,17 @@ import {
 } from './build-blocks';
 
 
-const adbidInterface = utils.getInterface('BlockAdAuction')
+const adbidInterface = utils.getInterface('BlockAdAuctionV2')
 
 // todo: add required params
 task('block-ad', 'Submit bids, build blocks and send them to relay')
-	.addOptionalParam("nslots", "Number of slots to build blocks for. Default is two.", 1, types.int)
-	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
-	.addOptionalParam("mevshare", "Address of a MevShare contract. By default fetch most recently deployed one.")
-	.addOptionalParam("extra", "Msg to be put in the block's extra param", "😎", types.string)
-	.addOptionalParam("adbid", "Bid amount for including the ad", 0.2, types.float)
-	.addFlag("build", "Whether to build blocks or not")
+	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
+	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
+	.addOptionalParam('mevshare', 'Address of a MevShare contract. By default fetch most recently deployed one.')
+	.addOptionalParam('extra', 'Msg to be put in the block\'s extra param', '😎', types.string)
+	.addOptionalParam('adbid', 'Bid amount for including the ad', 0.2, types.float)
+	.addOptionalParam('blockrange', 'For how many blocks the ad-request is valid', 2, types.int)
+	.addFlag('build', 'Whether to build blocks or not')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
 		const config = await getConfig(hre, taskArgs);
@@ -33,19 +34,20 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 			console.log(`Sending blocks for the next ${config.nSlots} slots`)
 			await submitAndBuild(config)
 		} else {
-			await sendAdBids(config)
+			await sendAdBid(config)
 		}
 	})
 
-async function sendAdBids(c: ITaskConfig) {	
-	console.log('Submitting adbids');
-	for (let i=2; i < c.nSlots + 1; i++) {
-		await submitAdBid(c)
-	}
+async function sendAdBid(c: ITaskConfig) {	
+	console.log('Submitting adbid');
+	await submitAdBid(c)
 }
 
 async function submitAndBuild(c: ITaskConfig) {
-	const precall = () => submitAdBid(c)
+	const success = await submitAdBid(c)
+	if (!success) {
+		process.exit(0)
+	}
 	const buildConfig: IBuildConfig = {
 		...getBuildEnvConfig(),
 		executionNodeAdd: c.executionNodeAdd, 
@@ -54,12 +56,12 @@ async function submitAndBuild(c: ITaskConfig) {
 	}
 	await doBlockBuilding(
 		buildConfig,
-		{ precall, iface: adbidInterface, method: 'buildBlock' }
+		{ iface: adbidInterface, method: 'buildBlock' }
 	)
 }
 
 async function submitAdBid(c: ITaskConfig): Promise<boolean> {
-	process.stdout.write('📢 Submitting ad ...')
+	process.stdout.write('📢 Submitting ad ... ')
 	const blockNum = await c.goerliSigner.provider.getBlockNumber()
 	const bidAmount = ethers.utils.parseEther(c.adBid.toString())
 	const [s, e] = await sendAdForBlock(
@@ -67,13 +69,12 @@ async function submitAdBid(c: ITaskConfig): Promise<boolean> {
 		c.goerliSigner,
 		c.executionNodeAdd, 
 		c.adauctionAdd,
-		blockNum + 1, // todo: as param
-		2, // todo: as param
+		blockNum + c.blockrange,
 		c.extra,
 		bidAmount
 	)
 	if (s) {
-		console.log("✅")
+		console.log('✅')
 		await s.then(console.log)
 		return true
 	} else {
@@ -88,12 +89,11 @@ async function sendAdForBlock(
 	goerliSigner: Wallet,
 	executionNodeAdd: string,
 	adbuilderAdd: string, 
-	blockStart: number, 
-	range: number,
+	blockLimit: number, 
 	extra: string,
 	bidAmount: BigNumber
 ): Promise<utils.Result<Promise<string>>> {
-	const calldata = adbidInterface.encodeFunctionData('buyAd', [blockStart, range, extra])
+	const calldata = adbidInterface.encodeFunctionData('buyAd', [blockLimit, extra])
 	const mevShareConfidentialRec = await utils.createConfidentialComputeRecord(
 		suaveSigner,
 		calldata, 
@@ -117,6 +117,7 @@ interface ITaskConfig {
 	extra: string,
 	adBid: number,
 	adauctionAdd: string,
+	blockrange: number,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
@@ -141,13 +142,14 @@ export function getEnvConfig() {
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const nSlots = parseFloat(taskArgs.nslots);
+	const blockrange = taskArgs.blockrange
 	const extra = taskArgs.extra
 	const adBid = taskArgs.adbid
 	const adauctionAdd = taskArgs.mevshare
 		? taskArgs.mevshare
-		: await utils.fetchDeployedContract(hre, 'BlockAdAuction').then(c => c.address)
+		: await utils.fetchDeployedContract(hre, 'BlockAdAuctionV2').then(c => c.address)
 
-	return { nSlots, adauctionAdd, extra, adBid }
+	return { nSlots, adauctionAdd, extra, adBid, blockrange }
 }
 
 
