@@ -110,7 +110,7 @@ contract BlockAdAuction is AnyBidContract {
 			else if (egp > bestOffer.egp)
 				bestOffer = EffectiveAdBid(request.extra, egp, paymentBundle);
 		}
-        crequire(bestOffer.egp > 0, "No valid offers");
+		crequire(bestOffer.egp > 0, "No valid offers");
 
 		// Prep for block building - include extra & payment bundle
 		// Expect the payment on top; if someone wants to fail the payment with other tx they need higher egp than the payment tx
@@ -161,7 +161,7 @@ library DynamicBytesUintArray {
             	let word := mload(wordPos)
 				let yStart := add(ys, 32)
             	mstore(add(yStart, mul(i, 32)), word)
-        	}
+			}
 		}
     }
 
