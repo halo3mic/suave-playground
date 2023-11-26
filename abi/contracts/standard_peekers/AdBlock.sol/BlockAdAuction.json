@@ -13,6 +13,17 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "BlockAdAuctionError",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -25,25 +36,6 @@
     ],
     "name": "PeekerReverted",
     "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "extra",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "blockNum",
-        "type": "uint256"
-      }
-    ],
-    "name": "AdBidEvent",
-    "type": "event"
   },
   {
     "anonymous": false,
@@ -71,38 +63,61 @@
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
         "internalType": "uint256",
-        "name": "",
+        "name": "id",
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "blockToBid",
-    "outputs": [
-      {
+        "indexed": false,
         "internalType": "string",
         "name": "extra",
         "type": "string"
       },
       {
-        "internalType": "Suave.BidId",
-        "name": "paymentBidId",
-        "type": "bytes16"
-      },
-      {
+        "indexed": false,
         "internalType": "uint256",
-        "name": "blockHeight",
+        "name": "blockLimit",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "name": "NewAdRequest",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "oldId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newId",
+        "type": "uint256"
+      }
+    ],
+    "name": "NewIndexForAdRequest",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "RemoveAdRequest",
+    "type": "event"
   },
   {
     "inputs": [
@@ -198,6 +213,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "builderCall",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_pendingRemovals",
+        "type": "bytes"
+      }
+    ],
+    "name": "buildCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "builder",
     "outputs": [
@@ -214,12 +247,7 @@
     "inputs": [
       {
         "internalType": "uint64",
-        "name": "blockStart",
-        "type": "uint64"
-      },
-      {
-        "internalType": "uint64",
-        "name": "range",
+        "name": "blockLimit",
         "type": "uint64"
       },
       {
@@ -249,19 +277,19 @@
             "type": "string"
           },
           {
+            "internalType": "uint256",
+            "name": "blockLimit",
+            "type": "uint256"
+          },
+          {
             "internalType": "Suave.BidId",
             "name": "paymentBidId",
             "type": "bytes16"
-          },
-          {
-            "internalType": "uint256",
-            "name": "blockHeight",
-            "type": "uint256"
           }
         ],
-        "internalType": "struct BlockAdAuction.AdBid[]",
-        "name": "bids",
-        "type": "tuple[]"
+        "internalType": "struct BlockAdAuction.AdRequest",
+        "name": "request",
+        "type": "tuple"
       }
     ],
     "name": "buyAdCallback",
@@ -325,6 +353,48 @@
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextRequestIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "requests",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "extra",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockLimit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "Suave.BidId",
+        "name": "paymentBidId",
+        "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ]
