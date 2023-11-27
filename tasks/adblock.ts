@@ -14,6 +14,7 @@ import {
 
 const adbidInterface = utils.getInterface('BlockAdAuctionV2')
 
+// todo: select between versions of the contract
 // todo: add required params
 task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
@@ -30,6 +31,12 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		console.log(`Goerli signer: ${config.goerliSigner.address}`)
 		
+		const c = await (hre.ethers as any).getContract('BlockAdAuctionV2') // todo: use interface
+		const isInit = await c.isInitialized()
+		if (!isInit) {
+			await confidentialInit(config)
+		}
+
 		if (taskArgs.build) {
 			console.log(`Sending blocks for the next ${config.nSlots} slots`)
 			await submitAndBuild(config)
@@ -94,19 +101,48 @@ async function sendAdForBlock(
 	bidAmount: BigNumber
 ): Promise<utils.Result<Promise<string>>> {
 	const calldata = adbidInterface.encodeFunctionData('buyAd', [blockLimit, extra])
-	const mevShareConfidentialRec = await utils.createConfidentialComputeRecord(
+	const confidentialRec = await utils.createConfidentialComputeRecord(
 		suaveSigner,
 		calldata, 
 		executionNodeAdd, 
 		adbuilderAdd,
 	);
 	const confidentialBytes = await utils.makePaymentBundleBytes(goerliSigner, bidAmount)
-	const inputBytes = new ConfidentialComputeRequest(mevShareConfidentialRec, confidentialBytes)
+	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
 		.signWithWallet(suaveSigner)
 		.rlpEncode()
 	const result = await utils.submitRawTxPrettyRes(suaveSigner.provider, inputBytes, adbidInterface, 'SubmitAd')
 
 	return result
+}
+
+async function confidentialInit(c: ITaskConfig) {
+	console.log('Initializing secret')
+	// todo: check if secret is already set
+	const secret = ethers.utils.id("garden of eden") // todo: make random string
+
+	const calldata = adbidInterface.encodeFunctionData('confidentialConstructor', [])
+	const confidentialRec = await utils.createConfidentialComputeRecord(
+		c.suaveSigner,
+		calldata, 
+		c.executionNodeAdd, 
+		c.adauctionAdd,
+	);
+	const confidentialBytes = secret
+	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
+		.signWithWallet(c.suaveSigner)
+		.rlpEncode()
+	console.log('Sending init tx')
+	const [s, e] = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, adbidInterface, 'ConfidentialInit')
+	if (s) {
+		console.log('✅')
+		await s.then(console.log)
+		return true
+	} else {
+		console.log('❌')
+		console.log(e)
+		return false
+	}
 }
 
 interface ITaskConfig {
