@@ -111,14 +111,9 @@ Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the follo
 * `BEACON_NODE`: RPC endpoint of your beacon node. Use the port you specified during beacon node setup.
 * `GOERLI_RELAY`: RPC endpoint of the Goerli relay. Use `https://relay-goerli.flashbots.net`.
 
-##### Deploy Builder and MevShare contracts
+#### Deploy Builder and MevShare contracts
 ```
 $ npx hardhat deploy --tags builder,mevshare,adblock
-```
-
-##### Generate ABIs
-```
-$ npx hardhat export-abi
 ```
 
 #### Send bids, build blocks and broadcast them to the relay
