@@ -47,7 +47,7 @@ export async function doBlockBuilding(c: ITaskConfig, opt?: IBuildOptions) {
 			console.log(`👷‍ No validator found for slot ${payload.data.proposal_slot}, skipping`)
 			i--; continue
 		}
-		// todo: this might cause too much latency - dont wait for tx confirmation
+		// ! This could cause latency and missed slots
 		if (opt?.precall) {
 			const isSuccess = await opt.precall(i)
 			if (!isSuccess) {

@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.8;
 
-import { UintBytes } from "./TypeConversion.sol";
 import { Suave } from "../../standard_peekers/bids.sol";
 
 
