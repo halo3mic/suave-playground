@@ -14,7 +14,6 @@ import {
 
 const adbidInterface = utils.getInterface('BlockAdAuctionV2')
 
-// todo: select between versions of the contract
 // todo: add required params
 task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
@@ -31,12 +30,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		console.log(`Goerli signer: ${config.goerliSigner.address}`)
 		
-		const c = await (hre.ethers as any).getContract('BlockAdAuctionV2') // todo: use interface
-		const isInit = await c.isInitialized()
-		if (!isInit) {
-			await confidentialInit(config)
-		}
-
+		await cInitIfNeeded(config)
 		if (taskArgs.build) {
 			console.log(`Sending blocks for the next ${config.nSlots} slots`)
 			await submitAndBuild(config)
@@ -52,9 +46,9 @@ async function sendAdBid(c: ITaskConfig) {
 
 async function submitAndBuild(c: ITaskConfig) {
 	const success = await submitAdBid(c)
-	if (!success) {
+	if (!success)
 		process.exit(0)
-	}
+	
 	const buildConfig: IBuildConfig = {
 		...getBuildEnvConfig(),
 		executionNodeAdd: c.executionNodeAdd, 
@@ -116,11 +110,18 @@ async function sendAdForBlock(
 	return result
 }
 
-async function confidentialInit(c: ITaskConfig) {
-	console.log('Initializing secret')
-	// todo: check if secret is already set
-	const secret = ethers.utils.id("garden of eden") // todo: make random string
+async function cInitIfNeeded(c: ITaskConfig): Promise<void> {
+	const input = adbidInterface.encodeFunctionData('isInitialized', [])
+	const isInit = await c.suaveSigner.provider.call({to: c.adauctionAdd, data: input})
+		.then(res => adbidInterface.decodeFunctionResult('isInitialized', res))
+	if (!isInit) {
+		const success = await confidentialInit(c)
+		if (!success)
+			process.exit(0)
+	}
+}
 
+async function confidentialInit(c: ITaskConfig): Promise<boolean> {
 	const calldata = adbidInterface.encodeFunctionData('confidentialConstructor', [])
 	const confidentialRec = await utils.createConfidentialComputeRecord(
 		c.suaveSigner,
@@ -128,7 +129,7 @@ async function confidentialInit(c: ITaskConfig) {
 		c.executionNodeAdd, 
 		c.adauctionAdd,
 	);
-	const confidentialBytes = secret
+	const confidentialBytes = ethers.utils.id(utils.getRandomStr())
 	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
 		.signWithWallet(c.suaveSigner)
 		.rlpEncode()
