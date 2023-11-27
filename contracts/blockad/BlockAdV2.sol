@@ -4,12 +4,12 @@
 pragma solidity ^0.8.8;
 
 import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
+import { DynamicUintArray } from "./lib/Utils.sol";
 import "./lib/ConfidentialControl.sol";
-import "./lib/TypeConversion.sol";
 
 
 contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
-	using UintBytes for bytes;
+	using DynamicUintArray for bytes;
 
 	struct AdRequest {
 		uint id;
@@ -18,6 +18,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		Suave.BidId paymentBidId;
 	}
 	struct Offer {
+		uint id;
 		string extra;
 		uint64 egp;
 		bytes paymentBundle;
@@ -33,16 +34,13 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 	EthBlockBidSenderContract public builder;
 	AdRequest[] public requests;
 
-	constructor(string memory boostRelayUrl_) {
-		builder = new EthBlockBidSenderContract(boostRelayUrl_);
-	}
 
 	/**********************************************************************
     *                           ⛓️ ON-CHAIN METHODS                       *
     ***********************************************************************/
 
-	function confidentialConstructor() public view override returns (bytes memory) {
-		return ConfidentialControl.confidentialConstructor();
+	constructor(string memory boostRelayUrl_) {
+		builder = new EthBlockBidSenderContract(boostRelayUrl_);
 	}
 
 	function buyAdCallback(
@@ -60,7 +58,8 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		UnlockArgs calldata uArgs
 	) unlock(uArgs) external {
 		handleIncludedRequest(includedRequestB);
-		removeRequests(pendingRemovalsB.export());
+		if (pendingRemovalsB.length > 0)
+			removeRequests(pendingRemovalsB.export());
 		executeExternalCallback(address(builder), builderCall);
 	}
 
@@ -71,6 +70,10 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 	/**********************************************************************
     *                         🔒 CONFIDENTIAL METHODS                      *
     ***********************************************************************/
+
+	function confidentialConstructor() onlyConfidential() public view override returns (bytes memory) {
+		return ConfidentialControl.confidentialConstructor();
+	}
 
 	function buyAd(
 		uint64 blockLimit, 
@@ -99,7 +102,8 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 
 		return abi.encodeWithSelector(
 			this.buildCallback.selector, 
-			externalCallback, 
+			externalCallback,
+			abi.encode(bestOffer.id, bestOffer.egp),
 			removals, 
 			getUnlockPair()
 		);
@@ -160,11 +164,11 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 			if (!success || egp == 0)
 				removals = removals.append(i);
 			else if (egp > bestOffer.egp)
-				bestOffer = Offer(request.extra, egp, paymentBundle);
+				bestOffer = Offer(request.id, request.extra, egp, paymentBundle);
 		}
 	}
 
-	function storeBundleInPool(uint64 blockHeight, Offer memory bestOffer) internal {
+	function storeBundleInPool(uint64 blockHeight, Offer memory bestOffer) internal view {
 		address[] memory allowedPeekers = new address[](3);
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;

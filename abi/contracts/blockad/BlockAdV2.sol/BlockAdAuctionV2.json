@@ -13,17 +13,6 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "message",
-        "type": "string"
-      }
-    ],
-    "name": "BlockAdAuctionError",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -35,6 +24,17 @@
       }
     ],
     "name": "PeekerReverted",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "SuaveError",
     "type": "error"
   },
   {
@@ -84,7 +84,7 @@
         "type": "uint256"
       }
     ],
-    "name": "NewAdRequest",
+    "name": "RequestAdded",
     "type": "event"
   },
   {
@@ -93,17 +93,17 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "oldId",
+        "name": "id",
         "type": "uint256"
       },
       {
         "indexed": false,
-        "internalType": "uint256",
-        "name": "newId",
-        "type": "uint256"
+        "internalType": "uint64",
+        "name": "egp",
+        "type": "uint64"
       }
     ],
-    "name": "NewIndexForAdRequest",
+    "name": "RequestIncluded",
     "type": "event"
   },
   {
@@ -116,7 +116,39 @@
         "type": "uint256"
       }
     ],
-    "name": "RemoveAdRequest",
+    "name": "RequestRemoved",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "Smth",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "Smth2",
     "type": "event"
   },
   {
@@ -221,8 +253,30 @@
       },
       {
         "internalType": "bytes",
-        "name": "_pendingRemovals",
+        "name": "includedRequestB",
         "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "pendingRemovalsB",
+        "type": "bytes"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "key",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nextHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ConfidentialControl.UnlockArgs",
+        "name": "uArgs",
+        "type": "tuple"
       }
     ],
     "name": "buildCallback",
@@ -272,6 +326,11 @@
       {
         "components": [
           {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
             "internalType": "string",
             "name": "extra",
             "type": "string"
@@ -290,11 +349,59 @@
         "internalType": "struct BlockAdAuctionV2.AdRequest",
         "name": "request",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "key",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nextHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ConfidentialControl.UnlockArgs",
+        "name": "uArgs",
+        "type": "tuple"
       }
     ],
     "name": "buyAdCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "nextHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "Suave.BidId",
+        "name": "sBidId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "ccCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "confidentialConstructor",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -357,6 +464,19 @@
   },
   {
     "inputs": [],
+    "name": "isInitialized",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "nextRequestIndex",
     "outputs": [
       {
@@ -378,6 +498,11 @@
     ],
     "name": "requests",
     "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
       {
         "internalType": "string",
         "name": "extra",

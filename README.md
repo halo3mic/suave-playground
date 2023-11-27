@@ -111,9 +111,14 @@ Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the follo
 * `BEACON_NODE`: RPC endpoint of your beacon node. Use the port you specified during beacon node setup.
 * `GOERLI_RELAY`: RPC endpoint of the Goerli relay. Use `https://relay-goerli.flashbots.net`.
 
-#### Deploy Builder and MevShare contracts
+##### Deploy Builder and MevShare contracts
 ```
-$ npx hardhat deploy --tags builder,mevshare,blockad
+$ npx hardhat deploy --tags builder,mevshare,adblock
+```
+
+##### Generate ABIs
+```
+$ npx hardhat export-abi
 ```
 
 #### Send bids, build blocks and broadcast them to the relay
@@ -133,9 +138,10 @@ Only build blocks
 $ npx hardhat build-blocks --nslots <number_of_slots>
 ```
 
-#### Submit Ad bid, build block and broadcast it to the relay
+#### Submit ad-request, build block and broadcast it to the relay
+Example:
 ```
-$ npx hardhat block-ad --nslots <number_of_slots> --extra "<ad_content>" --adbid <eth_bid_amount> --build
+$ npx hardhat block-ad --extra "So Extra 🔥" --adbid 0.2 --blockrange 10 --build
 ```
 
 

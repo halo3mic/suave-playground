@@ -29,9 +29,10 @@ abstract contract ConfidentialControl is SuaveContract {
     *                           ⛓️ ON-CHAIN METHODS                       *
     ***********************************************************************/
 
-	function ccCallback(bytes32 _nextHash) external {
+	function ccCallback(bytes32 nextHash, Suave.BidId sBidId) external {
 		crequire(!isInitialized(), "Already initialized");
-		presentHash = _nextHash;
+		presentHash = nextHash;
+        secretBidId = sBidId;
 	}
 
     function isInitialized() public view returns (bool) {
@@ -42,7 +43,7 @@ abstract contract ConfidentialControl is SuaveContract {
     *                         🔒 CONFIDENTIAL METHODS                      *
     ***********************************************************************/
 
-	function confidentialConstructor() onlyConfidential() public view returns (bytes memory) {
+	function confidentialConstructor() onlyConfidential() virtual public view returns (bytes memory) {
         crequire(!isInitialized(), "Already initialized");
         bytes memory secret = Suave.confidentialInputs();
         Suave.BidId sBidId = storeSecret(secret);
@@ -90,9 +91,7 @@ abstract contract ConfidentialControl is SuaveContract {
 
 	function getSecret() internal view returns (bytes32) {
         bytes memory secretB = Suave.confidentialRetrieve(secretBidId, S_NAMESPACE);
-		bytes32 secret = abi.decode(secretB, (bytes32));
-        crequire(secret != 0, "No secret");
-        return secret;
+		return abi.decode(secretB, (bytes32));
 	}
 
 }
