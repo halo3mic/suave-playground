@@ -222,4 +222,9 @@ export function handleSubmissionErr(iface: any, err: any, label: string): string
 	return `\t❗️ ${label} ` + rpcErr
 }
 
+export function getRandomStr() {
+	const ranInt = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+	return ranInt.toString(16);
+}
+
 export { getEnvValSafe };

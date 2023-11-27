@@ -1,98 +1,86 @@
 // SPDX-License-Identifier: MIT
 // Author: Miha Lotric (halo3mic)
+
 pragma solidity ^0.8.8;
 
 import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
-import { SecretContract, DynamicBytesUintArray } from "./lib/utils.sol";
+import "./lib/ConfidentialControl.sol";
+import "./lib/TypeConversion.sol";
 
 
-contract BlockAdAuctionV2 is AnyBidContract, SecretContract {
-	using DynamicBytesUintArray for bytes;
+contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
+	using UintBytes for bytes;
 
 	struct AdRequest {
+		uint id;
 		string extra;
 		uint blockLimit;
 		Suave.BidId paymentBidId;
 	}
-	struct EffectiveAdBid {
+	struct Offer {
 		string extra;
 		uint64 egp;
 		bytes paymentBundle;
 	}
 
-	event NewAdRequest(
-		uint id,
-		string extra,
-		uint blockLimit
-	);
-	event RemoveAdRequest(uint id);
-	event NewIndexForAdRequest(uint oldId, uint newId);
+	event RequestAdded(uint id, string extra, uint blockLimit);
+	event RequestRemoved(uint id);
+	event RequestIncluded(uint id, uint64 egp);
 
-	AdRequest[] public requests;
+	string constant PB_NAMESPACE = "blockad:v0:paymentBundle";
+	string constant EB_NAMESPACE = "default:v0:ethBundles";
+	string constant EB_SIM_NAMESPACE = "default:v0:ethBundleSimResults";
 	EthBlockBidSenderContract public builder;
+	AdRequest[] public requests;
 
 	constructor(string memory boostRelayUrl_) {
 		builder = new EthBlockBidSenderContract(boostRelayUrl_);
 	}
 
-	// ON-CHAIN METHODS
+	/**********************************************************************
+    *                           ⛓️ ON-CHAIN METHODS                       *
+    ***********************************************************************/
 
 	function confidentialConstructor() public view override returns (bytes memory) {
-		return SecretContract.confidentialConstructor();
+		return ConfidentialControl.confidentialConstructor();
 	}
 
 	function buyAdCallback(
 		AdRequest calldata request,
-		UnlockPair calldata unlockPair
-	) access(unlockPair) external {
+		UnlockArgs calldata uArgs
+	) unlock(uArgs) external {
 		requests.push(request);
-		emit NewAdRequest(requests.length-1, request.extra, request.blockLimit);
+		emit RequestAdded(requests.length-1, request.extra, request.blockLimit);
 	}
 
 	function buildCallback(
-		bytes memory builderCall, 
-		bytes memory _pendingRemovals,
-		UnlockPair calldata unlockPair
-	) access(unlockPair) external {
-		// Assume that the pendingRemovals were added in ascending order
-		// Assume that pendingRemovals.length <= requests.length
-		uint[] memory pendingRemovals = _pendingRemovals.export();
-		for (uint i=pendingRemovals.length; i>0; --i) {
-			uint indexToRemove = pendingRemovals[i-1];
-			if (indexToRemove < requests.length-1) {
-				requests[indexToRemove] = requests[requests.length-1];
-				emit NewIndexForAdRequest(requests.length-1, indexToRemove);
-			}
-			requests.pop();
-			emit RemoveAdRequest(indexToRemove);
-		}
-		// todo: emit the one who won the block
-
-		// External call
-		(bool success,) = address(builder).call(builderCall);
-		crequire(success, "Builder call failed");
+		bytes memory builderCall,
+		bytes memory includedRequestB,
+		bytes memory pendingRemovalsB,
+		UnlockArgs calldata uArgs
+	) unlock(uArgs) external {
+		handleIncludedRequest(includedRequestB);
+		removeRequests(pendingRemovalsB.export());
+		executeExternalCallback(address(builder), builderCall);
 	}
 
-	function nextRequestIndex() external view returns (uint) {
+	function nextRequestIndex() public view returns (uint) {
 		return requests.length;
 	}
 
-	// CONFIDENTIAL METHODS
+	/**********************************************************************
+    *                         🔒 CONFIDENTIAL METHODS                      *
+    ***********************************************************************/
 
 	function buyAd(
 		uint64 blockLimit, 
 		string memory extra
 	) onlyConfidential() external returns (bytes memory) {
-		// Check payment is valid for the latest state
 		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
 		crequire(Suave.simulateBundle(paymentBundle) != 0, "egp too low");
-		
-		address[] memory allowedPeekers = new address[](1);
-		allowedPeekers[0] = address(this);
-		Suave.Bid memory paymentBid = Suave.newBid(0, allowedPeekers, allowedPeekers, "blockad:v0:paymentBundle");
-		Suave.confidentialStore(paymentBid.id, "blockad:v0:paymentBundle", paymentBundle);
-		AdRequest memory request = AdRequest(extra, blockLimit, paymentBid.id);
-
+		Suave.BidId paymentBidId = storePaymentBundle(paymentBundle);
+		uint rid = nextRequestIndex();
+		AdRequest memory request = AdRequest(rid, extra, blockLimit, paymentBidId);
 		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
 	}
 
@@ -101,40 +89,89 @@ contract BlockAdAuctionV2 is AnyBidContract, SecretContract {
 		uint64 blockHeight
 	) onlyConfidential() public returns (bytes memory) {
 		crequire(requests.length > 0, "No requests");
-		// Find best offer and discard invalid for the present state
-		EffectiveAdBid memory bestOffer;
-		bytes memory pendingRemovals;
+		(Offer memory bestOffer, bytes memory removals) = filterOffers(blockHeight);
+		crequire(bestOffer.egp > 0, "No valid offers");
+
+		storeBundleInPool(blockHeight, bestOffer);
+		blockArgs.extra = bytes(bestOffer.extra);
+		// Expect flow is ordered by egp; if one wants to fail payment they need higher egp
+		bytes memory externalCallback = builder.buildFromPool(blockArgs, blockHeight);
+
+		return abi.encodeWithSelector(
+			this.buildCallback.selector, 
+			externalCallback, 
+			removals, 
+			getUnlockPair()
+		);
+	}
+
+	/**********************************************************************
+    *                         🛠️ INTERNAL METHODS                          *
+    ***********************************************************************/
+
+	function removeRequests(uint[] memory pendingRemovals) internal {
+		// Assume that the pendingRemovals were added in ascending order
+		// Assume that pendingRemovals.length <= requests.length
+		for (uint i=pendingRemovals.length; i>0; --i) {
+			uint indexToRemove = pendingRemovals[i-1];
+			uint requestId = requests[indexToRemove].id;
+			if (indexToRemove < requests.length-1) {
+				requests[indexToRemove] = requests[requests.length-1];
+			}
+			requests.pop();
+			emit RequestRemoved(requestId);
+		}
+	}
+
+	function handleIncludedRequest(bytes memory includedRequestB) internal {
+		(uint id, uint64 egp) = abi.decode(includedRequestB, (uint, uint64));
+		emit RequestIncluded(id, egp);
+	}
+
+	function executeExternalCallback(address target, bytes memory data) internal {
+		(bool success,) = target.call(data);
+		crequire(success, "External call failed");
+	}
+
+	function storePaymentBundle(bytes memory paymentBundle) internal view returns (Suave.BidId) {
+		address[] memory peekers = new address[](1);
+		peekers[0] = address(this);
+		Suave.Bid memory paymentBid = Suave.newBid(0, peekers, peekers, PB_NAMESPACE);
+		Suave.confidentialStore(paymentBid.id, PB_NAMESPACE, paymentBundle);
+		return paymentBid.id;
+	}
+
+	function filterOffers(uint blockHeight)
+		internal
+		view
+		returns (Offer memory bestOffer, bytes memory removals) 
+	{
 		for (uint i = 0; i < requests.length; ++i) {
 			AdRequest memory request = requests[i];
 			if (request.blockLimit < blockHeight) {
-				pendingRemovals = pendingRemovals.append(i);
+				removals = removals.append(i);
 				continue;
 			}
 			bytes memory paymentBundle = Suave.confidentialRetrieve(
 				request.paymentBidId,
-				"blockad:v0:paymentBundle"
+				PB_NAMESPACE
 			);
 			(bool success, uint64 egp) = simulateBundleSafe(paymentBundle);
 			if (!success || egp == 0)
-				pendingRemovals = pendingRemovals.append(i);
+				removals = removals.append(i);
 			else if (egp > bestOffer.egp)
-				bestOffer = EffectiveAdBid(request.extra, egp, paymentBundle);
+				bestOffer = Offer(request.extra, egp, paymentBundle);
 		}
-		crequire(bestOffer.egp > 0, "No valid offers");
+	}
 
-		// Prep for block building - include extra & payment bundle
-		// Expect the payment on top; if someone wants to fail the payment with other tx they need higher egp than the payment tx
+	function storeBundleInPool(uint64 blockHeight, Offer memory bestOffer) internal {
 		address[] memory allowedPeekers = new address[](3);
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
 		allowedPeekers[2] = address(this);
-		Suave.Bid memory paymentBundleBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, "default:v0:ethBundles");
-		Suave.confidentialStore(paymentBundleBid.id, "default:v0:ethBundles", bestOffer.paymentBundle);
-		Suave.confidentialStore(paymentBundleBid.id, "default:v0:ethBundleSimResults", abi.encode(bestOffer.egp));
-		blockArgs.extra = bytes(bestOffer.extra);
-		
-		bytes memory buildFromPoolCall = builder.buildFromPool(blockArgs, blockHeight);
-		return abi.encodeWithSelector(this.buildCallback.selector, buildFromPoolCall, pendingRemovals, getUnlockPair());
+		Suave.Bid memory paymentBundleBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, EB_NAMESPACE);
+		Suave.confidentialStore(paymentBundleBid.id, EB_NAMESPACE, bestOffer.paymentBundle);
+		Suave.confidentialStore(paymentBundleBid.id, EB_SIM_NAMESPACE, abi.encode(bestOffer.egp));
 	}
 
 }
