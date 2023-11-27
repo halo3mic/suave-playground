@@ -114,10 +114,6 @@ export function bundleToBytes(bundle: IBundle): string {
 	return confidentialDataBytes
 }
 
-export function removeLeadingZeros(hex: string): string {
-	return '0x' + hex.slice(2).replace(/^0+/, '');
-}
-
 export function makeGoerliSigner() {
 	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'));
 }
