@@ -81,5 +81,5 @@ export function hexFillZero(hex: string): string {
 }
 
 export function removeLeadingZeros(hex: string): string {
-	return '0x' + hex.slice(2).replace(/^0+/, '');
+	return '0x' + hex.slice(2).replace(/^00+/, '');
 }
