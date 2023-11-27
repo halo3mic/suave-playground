@@ -3,12 +3,11 @@
 pragma solidity ^0.8.8;
 
 import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
+import { SecretContract, DynamicBytesUintArray } from "./lib/utils.sol";
 
 
-contract BlockAdAuctionV2 is AnyBidContract {
+contract BlockAdAuctionV2 is AnyBidContract, SecretContract {
 	using DynamicBytesUintArray for bytes;
-
-    error BlockAdAuctionError(string message);
 
 	struct AdRequest {
 		string extra;
@@ -38,14 +37,23 @@ contract BlockAdAuctionV2 is AnyBidContract {
 
 	// ON-CHAIN METHODS
 
-	// todo: How to restrict access???
-	function buyAdCallback(AdRequest calldata request) external {
+	function confidentialConstructor() public view override returns (bytes memory) {
+		return SecretContract.confidentialConstructor();
+	}
+
+	function buyAdCallback(
+		AdRequest calldata request,
+		UnlockPair calldata unlockPair
+	) access(unlockPair) external {
 		requests.push(request);
 		emit NewAdRequest(requests.length-1, request.extra, request.blockLimit);
 	}
 
-	// todo: How to restrict access???
-	function buildCallback(bytes memory builderCall, bytes memory _pendingRemovals) external {
+	function buildCallback(
+		bytes memory builderCall, 
+		bytes memory _pendingRemovals,
+		UnlockPair calldata unlockPair
+	) access(unlockPair) external {
 		// Assume that the pendingRemovals were added in ascending order
 		// Assume that pendingRemovals.length <= requests.length
 		uint[] memory pendingRemovals = _pendingRemovals.export();
@@ -58,6 +66,8 @@ contract BlockAdAuctionV2 is AnyBidContract {
 			requests.pop();
 			emit RemoveAdRequest(indexToRemove);
 		}
+		// todo: emit the one who won the block
+
 		// External call
 		(bool success,) = address(builder).call(builderCall);
 		crequire(success, "Builder call failed");
@@ -72,8 +82,7 @@ contract BlockAdAuctionV2 is AnyBidContract {
 	function buyAd(
 		uint64 blockLimit, 
 		string memory extra
-	) external returns (bytes memory) {
-		crequire(Suave.isConfidential(), "Not confidential");
+	) onlyConfidential() external returns (bytes memory) {
 		// Check payment is valid for the latest state
 		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
 		crequire(Suave.simulateBundle(paymentBundle) != 0, "egp too low");
@@ -84,13 +93,14 @@ contract BlockAdAuctionV2 is AnyBidContract {
 		Suave.confidentialStore(paymentBid.id, "blockad:v0:paymentBundle", paymentBundle);
 		AdRequest memory request = AdRequest(extra, blockLimit, paymentBid.id);
 
-		return abi.encodeWithSelector(this.buyAdCallback.selector, request);
+		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
 	}
 
-	function buildBlock(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight) public returns (bytes memory) {
-		crequire(Suave.isConfidential(), "Not confidential");
-		crequire(requests.length > 0, "No bids");
-
+	function buildBlock(
+		Suave.BuildBlockArgs memory blockArgs, 
+		uint64 blockHeight
+	) onlyConfidential() public returns (bytes memory) {
+		crequire(requests.length > 0, "No requests");
 		// Find best offer and discard invalid for the present state
 		EffectiveAdBid memory bestOffer;
 		bytes memory pendingRemovals;
@@ -124,49 +134,8 @@ contract BlockAdAuctionV2 is AnyBidContract {
 		blockArgs.extra = bytes(bestOffer.extra);
 		
 		bytes memory buildFromPoolCall = builder.buildFromPool(blockArgs, blockHeight);
-		return abi.encodeWithSelector(this.buildCallback.selector, buildFromPoolCall, pendingRemovals);
+		return abi.encodeWithSelector(this.buildCallback.selector, buildFromPoolCall, pendingRemovals, getUnlockPair());
 	}
-
-	function simulateBundleSafe(bytes memory bundle) internal view returns (bool, uint64) {
-        (bool success, bytes memory egp) = Suave.SIMULATE_BUNDLE.staticcall(abi.encode(bundle));
-        return (success, uint64(egp.bytesToUint(0)));
-	}
-
-    function crequire(bool condition, string memory message) internal pure {
-        if (!condition)
-            revert BlockAdAuctionError(message);
-    }
 
 }
 
-library DynamicBytesUintArray {
-
-	function append(bytes memory a, uint e) internal pure returns (bytes memory) {
-		return bytes.concat(a, uintToBytes(e));
-	}
-
-	function export(bytes memory a) internal pure returns (uint[] memory) {
-		return bytesToUints(a);
-	}
-
-	function uintToBytes(uint x) internal pure returns (bytes memory y) {
-        assembly { mstore(add(y, 32), x) }
-    }
-
-	function bytesToUints(bytes memory xs) internal pure returns (uint[] memory ys) {
-		assembly {
-			let ysLength := div(mload(xs), 32)
-			for { let i := 0 } lt(i, ysLength) { i := add(i, 1) } {
-	            let wordPos := add(xs, add(mul(i, 32), 32))
-            	let word := mload(wordPos)
-				let yStart := add(ys, 32)
-            	mstore(add(yStart, mul(i, 32)), word)
-			}
-		}
-    }
-
-	function bytesToUint(bytes memory x, uint offset) internal pure returns (uint y) {
-        assembly { y := mload(add(x, offset)) }
-    }
-
-}
