@@ -33,6 +33,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 	string constant EB_SIM_NAMESPACE = "default:v0:ethBundleSimResults";
 	EthBlockBidSenderContract public builder;
 	AdRequest[] public requests;
+	uint public nextId;
 
 
 	/**********************************************************************
@@ -48,7 +49,8 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		UnlockArgs calldata uArgs
 	) unlock(uArgs) external {
 		requests.push(request);
-		emit RequestAdded(requests.length-1, request.extra, request.blockLimit);
+		nextId++;
+		emit RequestAdded(request.id, request.extra, request.blockLimit);
 	}
 
 	function buildCallback(
@@ -63,7 +65,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		executeExternalCallback(address(builder), builderCall);
 	}
 
-	function nextRequestIndex() public view returns (uint) {
+	function requestsLength() public view returns (uint) {
 		return requests.length;
 	}
 
@@ -82,8 +84,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
 		crequire(Suave.simulateBundle(paymentBundle) != 0, "egp too low");
 		Suave.BidId paymentBidId = storePaymentBundle(paymentBundle);
-		uint rid = nextRequestIndex();
-		AdRequest memory request = AdRequest(rid, extra, blockLimit, paymentBidId);
+		AdRequest memory request = AdRequest(nextId, extra, blockLimit, paymentBidId);
 		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
 	}
 
@@ -150,7 +151,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		view
 		returns (Offer memory bestOffer, bytes memory removals) 
 	{
-		for (uint i = 0; i < requests.length; ++i) {
+		for (uint i; i < requests.length; ++i) {
 			AdRequest memory request = requests[i];
 			if (request.blockLimit < blockHeight) {
 				removals = removals.append(i);
