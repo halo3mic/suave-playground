@@ -445,7 +445,7 @@
   },
   {
     "inputs": [],
-    "name": "nextRequestIndex",
+    "name": "nextId",
     "outputs": [
       {
         "internalType": "uint256",
@@ -485,6 +485,19 @@
         "internalType": "Suave.BidId",
         "name": "paymentBidId",
         "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "requestsLength",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
