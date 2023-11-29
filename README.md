@@ -7,7 +7,7 @@ Please note that Suave is an actively developed project, and with new updates, t
 ## Prerequisites
 Have the latest Golang, Git and NodeJS installed. Unless you have Goerli execution and beacon node at hand you will need ~400GB of disk space.
 
-## Setup Goerli-Geth 👻
+## Setup Goerli 🧪
 Run Goerli network with Suave-Geth. It will run as vanilla Geth with extra methods 
 `suavex_buildEthBlockFromBundles` and `suavex_buildEthBlock` which are essential for Suave block building. One can run vanilla Geth, but will need to implement the mentioned methods themself. If you have Goerli already synced just point Suave-Geth to existing db.
 
@@ -38,10 +38,7 @@ This account will represent your Suave execution node
 $ ./build/bin/geth account new --datadir $SUAVE_DATADIR
 # Note that default `datadir` is `~/.ethereum`.
 ```
-Write password to `./password`
-```
-$ echo "<account password>" > ./password
-```
+Save password in `./password`
 
 #### Genesis file
 
