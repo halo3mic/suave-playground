@@ -16,12 +16,17 @@ import {
 } from './beacon';
 
 
-type Result<T> = [T, null] | [null, string]
-const abis = utils.fetchAbis()
+type PreCall = (nextBlockNum: number) => Promise<boolean>
+interface IBuildOptions {
+	precall?: PreCall
+	iface?: ethers.utils.Interface,
+	method?: string,
+}
+const builderInterface = utils.getInterface('EthBlockBidSenderContract')
 
 task('build-blocks', 'Build blocks and send them to relay')
-	.addOptionalParam("nslots", "Number of slots to build blocks for. Default is two.", 1, types.int)
-	.addOptionalParam("builder", "Address of a Builder contract. By default fetch most recently deployed one.")
+	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
+	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
 		const config = await getConfig(hre, taskArgs);
@@ -29,65 +34,91 @@ task('build-blocks', 'Build blocks and send them to relay')
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		
-		await beginBlockBuilding(config)
+		await doBlockBuilding(config, null)
 	})
 
-async function beginBlockBuilding(c: ITaskConfig) {
+export async function doBlockBuilding(c: ITaskConfig, opt?: IBuildOptions) {
 	const paListener = new BeaconPAListener()
 
 	for (let i=0; i < c.nSlots; i++) {
 		const payload = await paListener.waitForNextSlot()
 		const validator = await getValidatorForSlot(c.relayUrl, payload.data.proposal_slot)
 		if (validator === null) {
-			console.log(`No validator for slot ${payload.data.proposal_slot}, skipping`)
+			console.log(`👷‍ No validator found for slot ${payload.data.proposal_slot}, skipping`)
 			i--; continue
 		}
+		// ! This could cause latency and missed slots
+		if (opt?.precall) {
+			const isSuccess = await opt.precall(i)
+			if (!isSuccess) {
+				await utils.sleep(2000)
+				continue
+			}
+		}
+
 		const buildBlockArgs = makeBuildBlockArgs(payload.data, validator)
 		const nextBlockNum = payload.data.parent_block_number + 1
-		const [success, err] = await buildBlock(c, buildBlockArgs, nextBlockNum)
-		if (err) {
-			console.log(err)
-		} else {
-			await success.then(console.log)
-		}
+		await build(c, buildBlockArgs, nextBlockNum, opt)
 	}
 	
 }
 
-export async function buildBlock(c: ITaskConfig, bbArgs: BuildBlockArgs, blockHeight: number): Promise<Result<Promise<string>>> {
-	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight);
+async function build(
+	c: ITaskConfig,
+	bbArgs: BuildBlockArgs, 
+	blockHeight: number,
+	bopt: IBuildOptions = null
+): Promise<boolean> {
+	process.stdout.write(`👷‍ Building block for slot ${bbArgs.slot} (block ${blockHeight})... `)
+	const [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
+	if (s) {
+		console.log('✅')
+		await s.then(console.log)
+		return true
+	} else {
+		console.log('❌')
+		console.log(e)
+		return false
+	}
+}
+
+export async function buildBlock(
+	c: ITaskConfig,
+	bbArgs: BuildBlockArgs, 
+	blockHeight: number,
+	bopt: IBuildOptions = null
+): Promise<utils.Result<Promise<string>>> {
+	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, bopt?.iface, bopt?.method);
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfRec, '0x')
 			.signWithWallet(c.suaveSigner)
 			.rlpEncode()
-
-	const result = await (c.suaveSigner.provider as any).send('eth_sendRawTransaction', [inputBytes])
-		.then(r => [handleNewSubmission(c.suaveSigner.provider, r), null])
-		.catch(err => [null, handleErr(err)])
-
+	const iface = bopt?.iface || builderInterface
+	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'BlockBuilding')
 	return result
 }
 
 async function makeBlockBuildConfRec(
 	c: ITaskConfig,
 	bbArgs: BuildBlockArgs,
-	blockHeight: number
+	blockHeight: number,
+	iface: ethers.utils.Interface = null,
+	method: string = null
 ): Promise<ConfidentialComputeRecord> {
-	const calldata = buildMevShareCalldata(bbArgs, blockHeight);
-	const nonce = await c.suaveSigner.getTransactionCount();
-	return {
-		chainId: SUAVE_CHAIN_ID,
-		nonce,
-		to: c.builderAdd,
-		value: ethers.utils.parseEther('0'),
-		gas: ethers.BigNumber.from(10000000),
-		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
-		data: calldata, 
-		executionNode: c.executionNodeAdd,
-	};
+	const calldata = makeCalldata(bbArgs, blockHeight, iface, method);
+	return utils.createConfidentialComputeRecord(
+		c.suaveSigner, 
+		calldata, 
+		c.executionNodeAdd, 
+		c.builderAdd, 
+	)
 }
 
-function buildMevShareCalldata(bbArgs: BuildBlockArgs, blockHeight: number) {
-	const mevshareInterface = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
+function makeCalldata(
+	bbArgs: BuildBlockArgs, 
+	blockHeight: number,
+	iface?: ethers.utils.Interface, 
+	method?: string
+) {
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,
@@ -97,12 +128,17 @@ function buildMevShareCalldata(bbArgs: BuildBlockArgs, blockHeight: number) {
 		bbArgs.gasLimit,
 		bbArgs.random,
 		bbArgs.withdrawals.map(w => [ w.index, w.validator, w.address, w.amount ]),
+		ethers.constants.HashZero
 	]
-	const calldata = mevshareInterface.encodeFunctionData('buildMevShare', [blockArgs, blockHeight])
+	if (!method)
+		method = 'buildMevShare'
+	if (!iface)
+		iface = builderInterface
+	const calldata = iface.encodeFunctionData(method, [blockArgs, blockHeight])
 	return calldata
 }
 
-interface BuildBlockArgs {
+export interface BuildBlockArgs {
 	slot: number;
 	proposerPubkey: string;
 	parent: string;
@@ -142,46 +178,7 @@ export function makeBuildBlockArgs(beacon: BeaconEventData, validator: Validator
 	
 }
 
-async function handleNewSubmission(provider, txHash): Promise<string> {
-	const builderInterface = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
-	const receipt = await provider.waitForTransaction(txHash, 1)
-
-	let output = `\tBuild tx ${txHash} confirmed:`
-	if (receipt.status === 0) {
-		output += `\t❗️ Block building failed`
-		output += `\n\t${JSON.stringify(receipt)}`
-	} else {
-		const tab = n => '\t  '.repeat(n)
-		output += `\n\t✅ Block building succeeded\n`
-		receipt.logs.forEach(log => {
-			const parsedLog = builderInterface.parseLog(log);
-			output += `${tab(1)}${parsedLog.name}\n`
-			parsedLog.eventFragment.inputs.forEach((input, i) => {
-				output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
-			})
-		})
-	}
-	return output + '\n'
-} 
-
-function handleErr(err): string {
-	const rpcErr = JSON.parse(err.body)?.error?.message
-	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
-		const revertMsg = rpcErr.slice('execution reverted: '.length)
-		const decodedErr = new ethers.utils.Interface(abis['EthBlockBidSenderContract'])
-			.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
-		if (revertMsg.startsWith('0x75fff467')) {
-			const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-			return `\t❗️ PeekerReverted(${decodedErr[0]}, '${errStr})'`
-		} else {
-			return `\t❗️ ` + rpcErr + '\n Params: ' + decodedErr.join(',')
-		}
-	} else {
-		return `\t❗️ ` + rpcErr
-	}
-}
-
-interface ITaskConfig {
+export interface ITaskConfig {
 	nSlots: number,
 	builderAdd: string,
 	executionNodeAdd: string,
@@ -191,7 +188,17 @@ interface ITaskConfig {
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
-	const { nSlots, builderAdd } = await parseTaskArgs(hre, taskArgs)
+	const cliConfig = await parseTaskArgs(hre, taskArgs)
+	const envConfig = getEnvConfig()
+	const suaveSigner = utils.makeSuaveSigner();
+	return {
+		suaveSigner,
+		...envConfig,
+		...cliConfig,
+	}
+}
+
+export function getEnvConfig() {
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE');
 	const relayUrl = utils.getEnvValSafe('GOERLI_RELAY');
 	const beaconUrl = utils.getEnvValSafe('GOERLI_BEACON');
@@ -199,17 +206,15 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	return {
 		executionNodeAdd,
 		suaveSigner,
-		builderAdd,
 		beaconUrl,
 		relayUrl,
-		nSlots,
 	}
 }
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const nSlots = parseInt(taskArgs.nslots);
-	const builderAdd = taskArgs.mevshare
-		? taskArgs.mevshare
+	const builderAdd = taskArgs.builder
+		? taskArgs.builder
 		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
 
 	return { nSlots, builderAdd }
