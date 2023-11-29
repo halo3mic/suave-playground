@@ -7,9 +7,9 @@ import 'hardhat-tracer'
 import 'hardhat-deploy'
 
 import { getEnvValSafe } from './src/utils'
-import './tasks/send-bundles'
 import './tasks/build-blocks'
-import './tasks/submit-and-build'
+import './tasks/mevshare'
+import './tasks/adblock'
 
 
 dconfig()

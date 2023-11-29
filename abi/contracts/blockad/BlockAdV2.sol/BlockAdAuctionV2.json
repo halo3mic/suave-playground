@@ -1,0 +1,506 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "boostRelayUrl_",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "PeekerReverted",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "SuaveError",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "Suave.BidId",
+        "name": "bidId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "decryptionCondition",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "allowedPeekers",
+        "type": "address[]"
+      }
+    ],
+    "name": "BidEvent",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "extra",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "blockLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "RequestAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "egp",
+        "type": "uint64"
+      }
+    ],
+    "name": "RequestIncluded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "RequestRemoved",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "slot",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes",
+            "name": "proposerPubkey",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "parent",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "timestamp",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint64",
+            "name": "gasLimit",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "random",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint64",
+                "name": "index",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validator",
+                "type": "uint64"
+              },
+              {
+                "internalType": "address",
+                "name": "Address",
+                "type": "address"
+              },
+              {
+                "internalType": "uint64",
+                "name": "amount",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct Suave.Withdrawal[]",
+            "name": "withdrawals",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "extra",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct Suave.BuildBlockArgs",
+        "name": "blockArgs",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint64",
+        "name": "blockHeight",
+        "type": "uint64"
+      }
+    ],
+    "name": "buildBlock",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "builderCall",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "includedRequestB",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "pendingRemovalsB",
+        "type": "bytes"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "key",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nextHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ConfidentialControl.UnlockArgs",
+        "name": "uArgs",
+        "type": "tuple"
+      }
+    ],
+    "name": "buildCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "builder",
+    "outputs": [
+      {
+        "internalType": "contract EthBlockBidSenderContract",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "blockLimit",
+        "type": "uint64"
+      },
+      {
+        "internalType": "string",
+        "name": "extra",
+        "type": "string"
+      }
+    ],
+    "name": "buyAd",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "extra",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "blockLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "Suave.BidId",
+            "name": "paymentBidId",
+            "type": "bytes16"
+          }
+        ],
+        "internalType": "struct BlockAdAuctionV2.AdRequest",
+        "name": "request",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "key",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "nextHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ConfidentialControl.UnlockArgs",
+        "name": "uArgs",
+        "type": "tuple"
+      }
+    ],
+    "name": "buyAdCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "nextHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "Suave.BidId",
+        "name": "sBidId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "ccCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "confidentialConstructor",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "Suave.BidId",
+            "name": "id",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "Suave.BidId",
+            "name": "salt",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "uint64",
+            "name": "decryptionCondition",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedPeekers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedStores",
+            "type": "address[]"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct Suave.Bid",
+        "name": "bid",
+        "type": "tuple"
+      }
+    ],
+    "name": "emitBid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "fetchBidConfidentialBundleData",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isInitialized",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "requests",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "extra",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockLimit",
+        "type": "uint256"
+      },
+      {
+        "internalType": "Suave.BidId",
+        "name": "paymentBidId",
+        "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "requestsLength",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

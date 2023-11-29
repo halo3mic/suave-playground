@@ -135,6 +135,11 @@
             "internalType": "struct Suave.Withdrawal[]",
             "name": "withdrawals",
             "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "extra",
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -233,6 +238,11 @@
             "internalType": "struct Suave.Withdrawal[]",
             "name": "withdrawals",
             "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "extra",
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -321,6 +331,11 @@
             "internalType": "struct Suave.Withdrawal[]",
             "name": "withdrawals",
             "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "extra",
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
@@ -409,6 +424,11 @@
             "internalType": "struct Suave.Withdrawal[]",
             "name": "withdrawals",
             "type": "tuple[]"
+          },
+          {
+            "internalType": "bytes",
+            "name": "extra",
+            "type": "bytes"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",

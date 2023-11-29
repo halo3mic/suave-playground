@@ -24,7 +24,7 @@ function _makeDeployCallback(deployOptions: DeployOptions): any {
             contract: deployOptions.contractName,
             args: deployOptions.args,
             gas: 1.5e5,
-            skipIfAlreadyDeployed: true, 
+            skipIfAlreadyDeployed: false, 
             ...deployOptions.optionalArgs
         })
 
