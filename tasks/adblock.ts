@@ -59,10 +59,10 @@ async function submitAndBuild(c: ITaskConfig) {
 			iface: adbidInterface, 
 			method: 'buildBlock',
 			precall: async () => {
-				await utils.sleep(2000)
-				c.adBid += 0.002
-				c.extra += '💨'
-				return await submitAdBid(c)
+				return utils.sleep(4000).then(() => true)
+				// c.adBid += 0.002
+				// c.extra = '🔥 ' + c.adBid + ' 💧'
+				// return await submitAdBid(c)
 			}
 		}
 	)
