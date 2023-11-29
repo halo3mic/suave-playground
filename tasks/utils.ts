@@ -2,7 +2,7 @@ import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
 import { ethers, Wallet, BigNumber } from 'ethers';
 
 import { ConfidentialComputeRecord } from '../src/confidential-types';
-import { getEnvValSafe, parseHexArg, fetchAbis } from '../src/utils';
+import { getEnvValSafe, fetchAbis } from '../src/utils';
 
 const abis = fetchAbis()
 
@@ -16,40 +16,6 @@ export interface IBundle {
 	txs: Array<string>,
 	revertingHashes: Array<string>,
 }
-
-// todo: check for unused utils
-
-// // suit geth naming convention
-// export function parseTx(tx) {
-// 	let parsedTx = {}
-// 	for (let [ key, val ] of Object.entries(tx)) {
-// 		if (['from', 'chainId'].includes(key))
-// 			continue;
-
-// 		switch (key) {
-// 			case 'gasLimit':
-// 				key = 'gas'
-// 				break;
-// 			case 'data': 
-// 				key = 'input'
-// 				break;
-// 			case 'd':
-// 				key = 'maxFeePerGas'
-// 				break;
-// 			default: 
-// 				break; 
-// 		}
-// 		parsedTx[key] = removeLeadingZeros(parseHexArg(val as any))
-// 	}
-
-// 	parsedTx['maxPriorityFeePerGas'] = parsedTx['maxPriorityFeePerGas'] || null
-// 	parsedTx['maxFeePerGas'] = parsedTx['maxFeePerGas'] || null
-// 	if (parsedTx['type'] == '0x') {
-// 		parsedTx['type'] = '0x0'
-// 	}
-	
-// 	return parsedTx;
-// }
 
 export async function createConfidentialComputeRecord(
 	suaveSigner: Wallet, 
@@ -202,16 +168,15 @@ export function handleSubmissionErr(iface: any, err: any, label: string): string
 	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
 		const revertMsg = rpcErr.slice('execution reverted: '.length)
 		if (revertMsg != '0x') {
-			const decodedErr = iface.decodeErrorResult(revertMsg.slice(0, 10), revertMsg)
-			// todo: find err from interface obj
-			switch (revertMsg.slice(0, 10)) {
-				case '0x75fff467':
-					const errStr = Buffer.from(decodedErr[1].slice(2), 'hex').toString()
-					return `\t❗️ ${label} PeekerReverted(${decodedErr[0]}, '${errStr})'`
-				case '0x9433d94b':
-					return `\t❗️ ${label} BlockAdAuctionError('${decodedErr[0]}')`
-				default:
-					return `\t❗️ ${label} ` + rpcErr + '\n Params: ' + decodedErr.join(',')
+			try {
+				const err = iface.parseError(revertMsg)
+				if (err.signature == 'PeekerReverted(address,bytes)') {
+					const errStr = Buffer.from(err.args[1].slice(2), 'hex').toString()
+					return `\t❗️ ${label} PeekerReverted(${err.args[0]}, '${errStr})'`
+				}
+				return `\t❗️ ${label} ${err.signature}(${err.args.map(a => `'${a}'`).join(',')})`
+			} catch {
+				return `\t❗️ ${label} ${rpcErr}`
 			}
 		}
 	}
