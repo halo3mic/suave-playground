@@ -13,6 +13,7 @@
     "chai": "^4.3.4",
     "dotenv": "^16.3.1",
     "elliptic": "^6.5.4",
+    "eslint": "^8.55.0",
     "ethereum-waffle": "^3.3.0",
     "ethereumjs-util": "^7.0.10",
     "ethers": "^5.7.2",
@@ -30,7 +31,13 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "solhint-check": "npx solhint 'contracts/**/*.sol'",
-    "pretty-contracts": "npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
+    "lint-sol": "npx solhint 'contracts/**/*.sol'",
+    "pretty::fix": "npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'",
+    "lint-ts": "eslint .",
+    "lint-ts:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1"
   }
 }

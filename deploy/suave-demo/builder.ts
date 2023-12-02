@@ -3,10 +3,10 @@ import { getEnvValSafe } from '../../src/utils'
 
 
 const deployOptions: DeployOptions = {
-    name: 'Builder', 
-    contractName: 'EthBlockBidSenderContract', 
-    args: [ getEnvValSafe('GOERLI_RELAY') ], 
-    tags: [ 'builder' ]
-};
+	name: 'Builder', 
+	contractName: 'EthBlockBidSenderContract', 
+	args: [ getEnvValSafe('GOERLI_RELAY') ], 
+	tags: [ 'builder' ]
+}
 
 module.exports = makeDeployCallback(deployOptions)

@@ -1,8 +1,8 @@
-import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
-import { ethers, Wallet, BigNumber } from 'ethers';
+import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
+import { ethers, Wallet, BigNumber } from 'ethers'
 
-import { ConfidentialComputeRecord } from '../src/confidential-types';
-import { getEnvValSafe, fetchAbis } from '../src/utils';
+import { ConfidentialComputeRecord } from '../src/confidential-types'
+import { getEnvValSafe, fetchAbis } from '../src/utils'
 
 const abis = fetchAbis()
 
@@ -24,8 +24,8 @@ export async function createConfidentialComputeRecord(
 	recipient: string,
 	options: any = {} // todo: restrict
 ): Promise<ConfidentialComputeRecord> {
-	const suaveNonce = await suaveSigner.getTransactionCount();
-	const chainId = await suaveSigner.getChainId();
+	const suaveNonce = await suaveSigner.getTransactionCount()
+	const chainId = await suaveSigner.getChainId()
 	return {
 		chainId,
 		nonce: suaveNonce,
@@ -36,7 +36,7 @@ export async function createConfidentialComputeRecord(
 		data: calldata, 
 		executionNode: executionNodeAddr,
 		...options
-	};
+	}
 }
 
 export async function makePaymentBundleBytes(signer: Wallet, reward: BigNumber): Promise<string> {
@@ -47,8 +47,8 @@ export async function makeSimplePaymentTx(signer: Wallet, reward: BigNumber): Pr
 	const expectedGas = 21000
 	const expectedBaseFee = await getNextBaseFee(signer.provider)
 	const gasPrice = reward.div(expectedGas).add(expectedBaseFee)
-	const nonce = await signer.getTransactionCount();
-	const chainId = await signer.getChainId();
+	const nonce = await signer.getTransactionCount()
+	const chainId = await signer.getChainId()
 	const tx = {
 		nonce,
 		from: signer.address,
@@ -56,22 +56,22 @@ export async function makeSimplePaymentTx(signer: Wallet, reward: BigNumber): Pr
 		gasPrice,
 		gasLimit: expectedGas,
 		chainId,
-	};
-	const signedTx = await signer.signTransaction(tx);
+	}
+	const signedTx = await signer.signTransaction(tx)
 	return signedTx
 }
 
 export function txToBundleBytes(signedTx): string {
-	const bundle = txToBundle(signedTx);
-	const bundleBytes = bundleToBytes(bundle);
-	return bundleBytes;
+	const bundle = txToBundle(signedTx)
+	const bundleBytes = bundleToBytes(bundle)
+	return bundleBytes
 }
 
 export function txToBundle(signedTx): IBundle {
 	return {
-	  txs: [signedTx],
-	  revertingHashes: [],
-	};
+		txs: [signedTx],
+		revertingHashes: [],
+	}
 }
 
 export function bundleToBytes(bundle: IBundle): string {
@@ -81,22 +81,22 @@ export function bundleToBytes(bundle: IBundle): string {
 }
 
 export function makeGoerliSigner() {
-	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'));
+	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'))
 }
 
 export function makeSuaveSigner() {
-	return makeSigner(getEnvValSafe('SUAVE_RPC'), getEnvValSafe('SUAVE_PK'));
+	return makeSigner(getEnvValSafe('SUAVE_RPC'), getEnvValSafe('SUAVE_PK'))
 }
 
 export function makeSigner(rpcUrl: string, pk: string) {
-	const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-	const signer = new ethers.Wallet(pk, provider);
+	const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+	const signer = new ethers.Wallet(pk, provider)
 	return signer
 }
 
 export async function signTransactionNonRlp(signer, tx) {
-	const rlpSigned = await signer.signTransaction(tx);
-	return ethers.utils.parseTransaction(rlpSigned);
+	const rlpSigned = await signer.signTransaction(tx)
+	return ethers.utils.parseTransaction(rlpSigned)
 }
 
 export async function fetchDeployedContract(hre: HRE, deploymentName: string) {
@@ -111,11 +111,11 @@ export function checkChain(hre: HRE, desiredChain: number) {
 }
 
 export function sleep(ms: number): Promise<void> {
-	return new Promise(resolve => setTimeout(resolve, ms));
+	return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 export async function getNextBaseFee(provider: ethers.providers.Provider) {
-    return provider.getBlock('pending').then(b => b.baseFeePerGas)
+	return provider.getBlock('pending').then(b => b.baseFeePerGas)
 }
 
 export async function submitRawTxPrettyRes(
@@ -134,14 +134,14 @@ export async function handleNewSubmission(iface: any, provider: any, txHash: str
 	const receipt = await provider.waitForTransaction(txHash, 1)
 	let output = `\t${label} Tx ${txHash} confirmed:`
 	if (receipt.status === 0) {
-		output += `\t❌ Tx execution failed`
+		output += '\t❌ Tx execution failed'
 		output += `\n\t${JSON.stringify(receipt)}`
 	} else {
 		const tab = n => '\t  '.repeat(n)
-		output += `\n\t✅ Tx execution succeeded\n`
+		output += '\n\t✅ Tx execution succeeded\n'
 		receipt.logs.forEach(log => {
 			try {
-				const parsedLog = iface.parseLog(log);
+				const parsedLog = iface.parseLog(log)
 				output += `${tab(1)}${parsedLog.name}\n`
 				parsedLog.eventFragment.inputs.forEach((input, i) => {
 					if (parsedLog.name == 'HintEvent' && input.name == 'hint') {
@@ -163,7 +163,7 @@ export async function handleNewSubmission(iface: any, provider: any, txHash: str
 	return output + '\n'
 }
 
-export function handleSubmissionErr(iface: any, err: any, label: string): string {
+export function handleSubmissionErr(iface: ethers.utils.Interface, err: any, label: string): string {
 	const rpcErr = JSON.parse(err.body)?.error?.message
 	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
 		const revertMsg = rpcErr.slice('execution reverted: '.length)
@@ -184,8 +184,8 @@ export function handleSubmissionErr(iface: any, err: any, label: string): string
 }
 
 export function getRandomStr() {
-	const ranInt = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-	return ranInt.toString(16);
+	const ranInt = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+	return ranInt.toString(16)
 }
 
-export { getEnvValSafe };
+export { getEnvValSafe }

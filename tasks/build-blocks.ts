@@ -1,19 +1,19 @@
-import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
-import { task, types } from 'hardhat/config';
-import { ethers, Wallet } from 'ethers';
+import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
+import { task, types } from 'hardhat/config'
+import { ethers, Wallet } from 'ethers'
 
-import { SUAVE_CHAIN_ID } from '../src/const';
+import { SUAVE_CHAIN_ID } from '../src/const'
 import { 
 	ConfidentialComputeRequest, 
 	ConfidentialComputeRecord 
 } from '../src/confidential-types'
-import * as utils from './utils';
+import * as utils from './utils'
 import {
 	BeaconPAListener, 
 	BeaconEventData, 
 	ValidatorMsg,
 	getValidatorForSlot 
-} from './beacon';
+} from './beacon'
 
 
 type PreCall = (nextBlockNum: number) => Promise<boolean>
@@ -29,7 +29,7 @@ task('build-blocks', 'Build blocks and send them to relay')
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
-		const config = await getConfig(hre, taskArgs);
+		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
@@ -88,10 +88,10 @@ export async function buildBlock(
 	blockHeight: number,
 	bopt: IBuildOptions = null
 ): Promise<utils.Result<Promise<string>>> {
-	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, bopt?.iface, bopt?.method);
+	const mevShareConfRec = await makeBlockBuildConfRec(c, bbArgs, blockHeight, bopt?.iface, bopt?.method)
 	const inputBytes = new ConfidentialComputeRequest(mevShareConfRec, '0x')
-			.signWithWallet(c.suaveSigner)
-			.rlpEncode()
+		.signWithWallet(c.suaveSigner)
+		.rlpEncode()
 	const iface = bopt?.iface || builderInterface
 	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'BlockBuilding')
 	return result
@@ -104,7 +104,7 @@ async function makeBlockBuildConfRec(
 	iface: ethers.utils.Interface = null,
 	method: string = null
 ): Promise<ConfidentialComputeRecord> {
-	const calldata = makeCalldata(bbArgs, blockHeight, iface, method);
+	const calldata = makeCalldata(bbArgs, blockHeight, iface, method)
 	return utils.createConfidentialComputeRecord(
 		c.suaveSigner, 
 		calldata, 
@@ -190,7 +190,7 @@ export interface ITaskConfig {
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const cliConfig = await parseTaskArgs(hre, taskArgs)
 	const envConfig = getEnvConfig()
-	const suaveSigner = utils.makeSuaveSigner();
+	const suaveSigner = utils.makeSuaveSigner()
 	return {
 		suaveSigner,
 		...envConfig,
@@ -199,10 +199,10 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 }
 
 export function getEnvConfig() {
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE');
-	const relayUrl = utils.getEnvValSafe('GOERLI_RELAY');
-	const beaconUrl = utils.getEnvValSafe('GOERLI_BEACON');
-	const suaveSigner = utils.makeSuaveSigner();
+	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
+	const relayUrl = utils.getEnvValSafe('GOERLI_RELAY')
+	const beaconUrl = utils.getEnvValSafe('GOERLI_BEACON')
+	const suaveSigner = utils.makeSuaveSigner()
 	return {
 		executionNodeAdd,
 		suaveSigner,
@@ -212,7 +212,7 @@ export function getEnvConfig() {
 }
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
-	const nSlots = parseInt(taskArgs.nslots);
+	const nSlots = parseInt(taskArgs.nslots)
 	const builderAdd = taskArgs.builder
 		? taskArgs.builder
 		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
