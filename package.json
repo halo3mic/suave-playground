@@ -5,6 +5,7 @@
   "dependencies": {
     "@flashbots/ethers-provider-bundle": "^0.6.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-solhint": "^3.0.1",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.7.3",
     "@types/mocha": "^10.0.3",
@@ -22,10 +23,14 @@
     "hardhat-deploy-ethers": "0.3.0-beta.13",
     "hardhat-tracer": "^2.6.0",
     "node-fetch": "2",
+    "prettier": "^3.1.0",
+    "prettier-plugin-solidity": "^1.2.0",
+    "solhint": "^4.0.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "start": "node ./src/index.js"
+    "solhint-check": "npx solhint 'contracts/**/*.sol'",
+    "pretty-contracts": "npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
   }
 }
