@@ -1,15 +1,15 @@
-import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types';
-import { ethers, Wallet, BigNumber } from 'ethers';
-import { task, types } from 'hardhat/config';
+import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
+import { ethers, Wallet, BigNumber } from 'ethers'
+import { task, types } from 'hardhat/config'
 
 import { ConfidentialComputeRequest } from '../src/confidential-types'
-import { SUAVE_CHAIN_ID } from '../src/const';
-import * as utils from './utils';
+import { SUAVE_CHAIN_ID } from '../src/const'
+import * as utils from './utils'
 import {
 	getEnvConfig as getBuildEnvConfig,
 	ITaskConfig as IBuildConfig,
 	doBlockBuilding
-} from './build-blocks';
+} from './build-blocks'
 
 
 const adbidInterface = utils.getInterface('BlockAdAuctionV2')
@@ -23,7 +23,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addFlag('build', 'Whether to build blocks after sending the ad-request')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, SUAVE_CHAIN_ID)
-		const config = await getConfig(hre, taskArgs);
+		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		console.log(`Goerli signer: ${config.goerliSigner.address}`)
@@ -38,7 +38,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 	})
 
 async function sendAdBid(c: ITaskConfig) {	
-	console.log('Submitting adbid');
+	console.log('Submitting adbid')
 	await submitAdBid(c)
 }
 
@@ -108,7 +108,7 @@ async function sendAdForBlock(
 		calldata, 
 		executionNodeAdd, 
 		adbuilderAdd,
-	);
+	)
 	const confidentialBytes = await utils.makePaymentBundleBytes(goerliSigner, bidAmount)
 	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
 		.signWithWallet(suaveSigner)
@@ -135,7 +135,7 @@ async function confidentialInit(c: ITaskConfig): Promise<boolean> {
 		calldata, 
 		c.executionNodeAdd, 
 		c.adauctionAdd,
-	);
+	)
 	const confidentialBytes = ethers.utils.id(utils.getRandomStr())
 	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
 		.signWithWallet(c.suaveSigner)
@@ -178,9 +178,9 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 }
 
 export function getEnvConfig() {
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE');
-	const suaveSigner = utils.makeSuaveSigner();
-	const goerliSigner = utils.makeGoerliSigner();
+	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
+	const suaveSigner = utils.makeSuaveSigner()
+	const goerliSigner = utils.makeGoerliSigner()
 	return {
 		executionNodeAdd,
 		goerliSigner,
