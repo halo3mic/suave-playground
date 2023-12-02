@@ -13,31 +13,31 @@ import './tasks/adblock'
 
 
 dconfig()
-const SUAVE_PK = getEnvValSafe("SUAVE_PK");
-const GOERLI_PK = getEnvValSafe("GOERLI_PK");
-const SUAVE_RPC = getEnvValSafe("SUAVE_RPC");
-const GOERLI_RPC = getEnvValSafe("GOERLI_RPC");
+const SUAVE_PK = getEnvValSafe('SUAVE_PK')
+const GOERLI_PK = getEnvValSafe('GOERLI_PK')
+const SUAVE_RPC = getEnvValSafe('SUAVE_RPC')
+const GOERLI_RPC = getEnvValSafe('GOERLI_RPC')
 
 
 export default {
-  solidity: "0.8.8",
-  defaultNetwork: 'suave',
-  namedAccounts: {
-    deployer: {
-      default: 0,
-    }
-  },
-  networks: {
-    suave: {
-      chainId: 424242,
-      gasPrice: 0,
-      url: SUAVE_RPC,
-      accounts: [ SUAVE_PK ]
-    },
-    goerli: {
-      chainId: 5,
-      url: GOERLI_RPC,
-      accounts: [ GOERLI_PK ]
-    }
-  }
+	solidity: '0.8.8',
+	defaultNetwork: 'suave',
+	namedAccounts: {
+		deployer: {
+			default: 0,
+		}
+	},
+	networks: {
+		suave: {
+			chainId: 424242,
+			gasPrice: 0,
+			url: SUAVE_RPC,
+			accounts: [ SUAVE_PK ]
+		},
+		goerli: {
+			chainId: 5,
+			url: GOERLI_RPC,
+			accounts: [ GOERLI_PK ]
+		}
+	}
 }
