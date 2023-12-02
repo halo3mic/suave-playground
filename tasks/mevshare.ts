@@ -3,12 +3,12 @@ import { task, types } from 'hardhat/config'
 import { ethers, Wallet } from 'ethers'
 
 import { ConfidentialComputeRequest } from '../src/confidential-types'
-import { SUAVE_CHAIN_ID, PRECOMPILES } from '../src/const'
 import {
 	getEnvConfig as getBuildEnvConfig,
 	ITaskConfig as IBuildConfig,
 	doBlockBuilding
 } from './build-blocks'
+import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, PRECOMPILES } from './utils/const'
 import { Result } from './utils'
 import * as utils from './utils'
 
@@ -21,7 +21,7 @@ task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.addFlag('build', 'Whether to build blocks or not')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, SUAVE_CHAIN_ID)
+		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending bundles for the next ${config.nslots} blocks`)
@@ -50,6 +50,7 @@ async function submitAndBuild(c: ITaskConfig) {
 	const buildConfig: IBuildConfig = {
 		...getBuildEnvConfig(),
 		executionNodeAdd: c.executionNodeAdd, 
+		suaveSigner: c.suaveSigner,
 		builderAdd: c.builderAdd,
 		nSlots: c.nslots,
 	}
@@ -119,7 +120,8 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const { nslots, mevshareAdd, builderAdd } = await parseTaskArgs(hre, taskArgs)
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
 	const goerliSigner = utils.makeGoerliSigner()
-	const suaveSigner = utils.makeSuaveSigner()
+	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
+	const suaveSigner = utils.makeSuaveSigner(useTestnet)
 	return {
 		nslots,
 		mevshareAdd,

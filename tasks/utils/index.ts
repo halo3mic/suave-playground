@@ -1,8 +1,8 @@
 import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { ethers, Wallet, BigNumber } from 'ethers'
 
-import { ConfidentialComputeRecord } from '../src/confidential-types'
-import { getEnvValSafe, fetchAbis } from '../src/utils'
+import { ConfidentialComputeRecord } from '../../src/confidential-types'
+import { getEnvValSafe, fetchAbis } from '../../src/utils'
 
 const abis = fetchAbis()
 
@@ -84,8 +84,10 @@ export function makeGoerliSigner() {
 	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'))
 }
 
-export function makeSuaveSigner() {
-	return makeSigner(getEnvValSafe('SUAVE_RPC'), getEnvValSafe('SUAVE_PK'))
+export function makeSuaveSigner(useTestnet: boolean) {
+	const rpcUrl = getEnvValSafe(useTestnet ? 'RIGIL_RPC' : 'SUAVE_RPC')
+	const pk = getEnvValSafe(useTestnet ? 'RIGIL_PK' : 'SUAVE_PK')
+	return makeSigner(rpcUrl, pk)
 }
 
 export function makeSigner(rpcUrl: string, pk: string) {
@@ -100,31 +102,40 @@ export async function signTransactionNonRlp(signer, tx) {
 }
 
 export async function fetchDeployedContract(hre: HRE, deploymentName: string) {
-	return (hre.ethers as any).getContract(deploymentName) 
+	return (hre as any).ethers.getContract(deploymentName) 
 }
 
-export function checkChain(hre: HRE, desiredChain: number) {
-	const chainId = hre.network.config.chainId
-	if (chainId != desiredChain) {
-		throw Error(`Expected Suave chain-id(${desiredChain}), got ${chainId}`)
+export function checkChain(hre: HRE, desiredChains: number[]) {
+	const chainId = getNetworkChainId(hre)
+	if (chainId && !desiredChains.includes(chainId)) {
+		throw Error(`Expected one of ${desiredChains}; got ${chainId}`)
 	}
+}
+
+export function getNetworkChainId(hre: HRE) {
+	return hre.network.config.chainId
 }
 
 export function sleep(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function getNextBaseFee(provider: ethers.providers.Provider) {
-	return provider.getBlock('pending').then(b => b.baseFeePerGas)
+export async function getNextBaseFee(provider: ethers.providers.Provider): Promise<number> {
+	return provider.getBlock('pending').then(b =>{
+		const bfee = b?.baseFeePerGas
+		if (!bfee)
+			throw Error('No baseFeePerGas')
+		return bfee.toNumber()	
+	})
 }
 
 export async function submitRawTxPrettyRes(
 	provider: ethers.providers.Provider, 
 	inputBytes: string, 
 	iface: ethers.utils.Interface, 
-	label?: string
+	label_?: string
 ): Promise<Result<Promise<string>>> {
-	label = label ? `'${label}'` : ''
+	const label: string = label_ ? `'${label_}'` : ''
 	return (provider as any).send('eth_sendRawTransaction', [inputBytes])
 		.then(r => [handleNewSubmission(iface, provider, r, label), null])
 		.catch(err => [null, handleSubmissionErr(iface, err, label)])
