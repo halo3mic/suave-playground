@@ -15,8 +15,10 @@ import './tasks/adblock'
 dconfig()
 const SUAVE_PK = getEnvValSafe('SUAVE_PK')
 const GOERLI_PK = getEnvValSafe('GOERLI_PK')
+const RIGIL_PK = getEnvValSafe('RIGIL_PK')
 const SUAVE_RPC = getEnvValSafe('SUAVE_RPC')
 const GOERLI_RPC = getEnvValSafe('GOERLI_RPC')
+const RIGIL_RPC = getEnvValSafe('RIGIL_RPC')
 
 
 export default {
@@ -38,6 +40,11 @@ export default {
 			chainId: 5,
 			url: GOERLI_RPC,
 			accounts: [ GOERLI_PK ]
+		}, 
+		rigil: {
+			chainId: 16813125,
+			url: RIGIL_RPC,
+			accounts: [ RIGIL_PK ]
 		}
 	}
 }
