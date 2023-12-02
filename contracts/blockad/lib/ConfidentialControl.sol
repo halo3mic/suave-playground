@@ -7,91 +7,89 @@ import { SuaveContract, Suave } from "./SuaveContract.sol";
 
 
 abstract contract ConfidentialControl is SuaveContract {
-
-    struct UnlockArgs {
-        bytes32 key;
-        bytes32 nextHash;
-    }
+	struct UnlockArgs {
+		bytes32 key;
+		bytes32 nextHash;
+	}
 
 	modifier unlock(UnlockArgs calldata unlockPair) {
 		crequire(isValidKey(unlockPair.key), "Invalid key");
 		_;
-        presentHash = unlockPair.nextHash;
-        nonce++;
+		presentHash = unlockPair.nextHash;
+		nonce++;
 	}
 
-    string constant S_NAMESPACE = "blockad:v0:secret";
-    Suave.BidId secretBidId;
-	bytes32 presentHash;
-	uint nonce;
+	string internal constant S_NAMESPACE = "blockad:v0:secret";
+	Suave.BidId internal secretBidId;
+	bytes32 internal presentHash;
+	uint internal nonce;
 
 	/**********************************************************************
-    *                           ⛓️ ON-CHAIN METHODS                       *
-    ***********************************************************************/
+	 *                           ⛓️ ON-CHAIN METHODS                       *
+	 ***********************************************************************/
 
 	function ccCallback(bytes32 nextHash, Suave.BidId sBidId) external {
 		crequire(!isInitialized(), "Already initialized");
 		presentHash = nextHash;
-        secretBidId = sBidId;
+		secretBidId = sBidId;
 	}
 
-    function isInitialized() public view returns (bool) {
-        return presentHash != 0;
-    }
-
-	/**********************************************************************
-    *                         🔒 CONFIDENTIAL METHODS                      *
-    ***********************************************************************/
-
-	function confidentialConstructor() onlyConfidential() virtual public view returns (bytes memory) {
-        crequire(!isInitialized(), "Already initialized");
-        bytes memory secret = Suave.confidentialInputs();
-        Suave.BidId sBidId = storeSecret(secret);
-        bytes32 nextHash = makeHash(abi.decode(secret, (bytes32)), nonce);
-        return abi.encodeWithSelector(this.ccCallback.selector, nextHash, sBidId);
+	function isInitialized() public view returns (bool) {
+		return presentHash != 0;
 	}
 
 	/**********************************************************************
-    *                         🛠️ INTERNAL METHODS                          *
-    ***********************************************************************/
+	 *                         🔒 CONFIDENTIAL METHODS                      *
+	 ***********************************************************************/
 
-    function storeSecret(bytes memory secret) internal view returns (Suave.BidId) {
-        address[] memory peekers = new address[](3);
+	function confidentialConstructor() public view virtual onlyConfidential returns (bytes memory) {
+		crequire(!isInitialized(), "Already initialized");
+		bytes memory secret = Suave.confidentialInputs();
+		Suave.BidId sBidId = storeSecret(secret);
+		bytes32 nextHash = makeHash(abi.decode(secret, (bytes32)), nonce);
+		return abi.encodeWithSelector(this.ccCallback.selector, nextHash, sBidId);
+	}
+
+	/**********************************************************************
+	 *                         🛠️ INTERNAL METHODS                          *
+	 ***********************************************************************/
+
+	function storeSecret(bytes memory secret) internal view returns (Suave.BidId) {
+		address[] memory peekers = new address[](3);
 		peekers[0] = address(this);
-        peekers[1] = Suave.FETCH_BIDS;
-        peekers[2] = Suave.CONFIDENTIAL_RETRIEVE;
+		peekers[1] = Suave.FETCH_BIDS;
+		peekers[2] = Suave.CONFIDENTIAL_RETRIEVE;
 		Suave.Bid memory secretBid = Suave.newBid(0, peekers, peekers, S_NAMESPACE);
 		Suave.confidentialStore(secretBid.id, S_NAMESPACE, secret);
-        return secretBid.id;    
-    }
+		return secretBid.id;
+	}
 
-    function isValidKey(bytes32 key) internal view returns (bool) {
+	function isValidKey(bytes32 key) internal view returns (bool) {
 		return keccak256(abi.encode(key)) == presentHash;
 	}
-    
-    function getUnlockPair() internal view returns (UnlockArgs memory) {
-        return UnlockArgs(getKey(nonce), getHash(nonce + 1));
-    }
+
+	function getUnlockPair() internal view returns (UnlockArgs memory) {
+		return UnlockArgs(getKey(nonce), getHash(nonce + 1));
+	}
 
 	function getHash(uint _nonce) internal view returns (bytes32) {
 		return keccak256(abi.encode(getKey(_nonce)));
 	}
 
-    function getKey(uint _nonce) internal view returns (bytes32) {
+	function getKey(uint _nonce) internal view returns (bytes32) {
 		return makeKey(getSecret(), _nonce);
 	}
 
-    function makeHash(bytes32 secret, uint _nonce) internal pure returns (bytes32) {
-        return keccak256(abi.encode(makeKey(secret, _nonce)));
-    }
-
-    function makeKey(bytes32 secret, uint _nonce) internal pure returns (bytes32) {
-        return keccak256(abi.encode(secret, _nonce));
-    }
-
-	function getSecret() internal view returns (bytes32) {
-        bytes memory secretB = Suave.confidentialRetrieve(secretBidId, S_NAMESPACE);
-		return abi.decode(secretB, (bytes32));
+	function makeHash(bytes32 secret, uint _nonce) internal pure returns (bytes32) {
+		return keccak256(abi.encode(makeKey(secret, _nonce)));
 	}
 
+	function makeKey(bytes32 secret, uint _nonce) internal pure returns (bytes32) {
+		return keccak256(abi.encode(secret, _nonce));
+	}
+
+	function getSecret() internal view returns (bytes32) {
+		bytes memory secretB = Suave.confidentialRetrieve(secretBidId, S_NAMESPACE);
+		return abi.decode(secretB, (bytes32));
+	}
 }

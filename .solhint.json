@@ -1,0 +1,17 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": [ "prettier" ],
+  "rules": {
+    "explicit-types": "off",
+    "prettier/prettier": "warn",
+    "max-line-length": ["error", 120],
+    "visibility-modifier-order": "error",
+    "state-visibility": "warn",
+    "no-empty-blocks": "error",
+    "compiler-version": ["error", "^0.8.8"],
+    "one-contract-per-file": "off",
+    "func-visibility": ["warn", {"ignoreConstructors": true}],
+    "avoid-low-level-calls": "off",
+    "no-inline-assembly": "off"
+  }
+}
