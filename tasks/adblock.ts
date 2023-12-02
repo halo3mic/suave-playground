@@ -3,7 +3,7 @@ import { ethers, Wallet, BigNumber } from 'ethers'
 import { task, types } from 'hardhat/config'
 
 import { ConfidentialComputeRequest } from '../src/confidential-types'
-import { SUAVE_CHAIN_ID } from '../src/const'
+import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
 import * as utils from './utils'
 import {
 	getEnvConfig as getBuildEnvConfig,
@@ -22,7 +22,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addOptionalParam('mevshare', 'Address of a MevShare contract. By default fetch most recently deployed one.')
 	.addFlag('build', 'Whether to build blocks after sending the ad-request')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, SUAVE_CHAIN_ID)
+		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
@@ -49,7 +49,8 @@ async function submitAndBuild(c: ITaskConfig) {
 
 	const buildConfig: IBuildConfig = {
 		...getBuildEnvConfig(),
-		executionNodeAdd: c.executionNodeAdd, 
+		executionNodeAdd: c.executionNodeAdd,
+		suaveSigner: c.suaveSigner, 
 		builderAdd: c.adauctionAdd,
 		nSlots: c.blockrange,
 	}
@@ -169,17 +170,18 @@ interface ITaskConfig {
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
+	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
 	const cliConfig = await parseTaskArgs(hre, taskArgs)
-	const envConfig = getEnvConfig()
+	const envConfig = getEnvConfig(useTestnet)
 	return {
 		...cliConfig, 
 		...envConfig,
 	}
 }
 
-export function getEnvConfig() {
+export function getEnvConfig(useTestnet: boolean = false) {
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const suaveSigner = utils.makeSuaveSigner()
+	const suaveSigner = utils.makeSuaveSigner(useTestnet)
 	const goerliSigner = utils.makeGoerliSigner()
 	return {
 		executionNodeAdd,

@@ -45,7 +45,7 @@ export class BeaconPAListener {
 		const lastKnownSlot = this.lastSlot
 		return new Promise((resolve) => {
 			const interval = setInterval(() => {
-				if (this.lastSlot > lastKnownSlot) {
+				if (this.lastBeaconMsg && this.lastSlot > lastKnownSlot) {
 					clearInterval(interval)
 					resolve(this.lastBeaconMsg)
 				}
@@ -127,5 +127,3 @@ export async function getValidatorForSlot(relayUrl: string, slot: number): Promi
 		timestamp: parseInt(vmsg.timestamp),
 	}
 }
-
-

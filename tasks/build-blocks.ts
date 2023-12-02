@@ -2,18 +2,18 @@ import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { task, types } from 'hardhat/config'
 import { ethers, Wallet } from 'ethers'
 
-import { SUAVE_CHAIN_ID } from '../src/const'
 import { 
 	ConfidentialComputeRequest, 
 	ConfidentialComputeRecord 
 } from '../src/confidential-types'
+import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
 import * as utils from './utils'
 import {
 	BeaconPAListener, 
 	BeaconEventData, 
 	ValidatorMsg,
 	getValidatorForSlot 
-} from './beacon'
+} from './utils/beacon'
 
 
 type PreCall = (nextBlockNum: number) => Promise<boolean>
@@ -28,7 +28,7 @@ task('build-blocks', 'Build blocks and send them to relay')
 	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, SUAVE_CHAIN_ID)
+		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
@@ -188,21 +188,21 @@ export interface ITaskConfig {
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
+	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
 	const cliConfig = await parseTaskArgs(hre, taskArgs)
-	const envConfig = getEnvConfig()
-	const suaveSigner = utils.makeSuaveSigner()
+	const envConfig = getEnvConfig(useTestnet)
 	return {
-		suaveSigner,
 		...envConfig,
 		...cliConfig,
 	}
 }
 
-export function getEnvConfig() {
+export function getEnvConfig(useTestnet: boolean = false) {
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
 	const relayUrl = utils.getEnvValSafe('GOERLI_RELAY')
 	const beaconUrl = utils.getEnvValSafe('GOERLI_BEACON')
-	const suaveSigner = utils.makeSuaveSigner()
+	const suaveSigner = utils.makeSuaveSigner(useTestnet)
+
 	return {
 		executionNodeAdd,
 		suaveSigner,
