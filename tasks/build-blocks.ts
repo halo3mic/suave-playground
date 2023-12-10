@@ -23,10 +23,12 @@ interface IBuildOptions {
 	method?: string,
 }
 const builderInterface = utils.getInterface('EthBlockBidSenderContract')
+const adbidInterface = utils.getInterface('BlockAdAuctionV2')
 
 task('build-blocks', 'Build blocks and send them to relay')
-	.addOptionalParam('nslots', 'Number of slots to build blocks for. Default is two.', 1, types.int)
+	.addOptionalParam('nslots', 'Number of slots to build blocks for.', 1, types.int)
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
+	.addFlag('blockad', 'Whether to build blocks for ad-bids')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
@@ -34,7 +36,7 @@ task('build-blocks', 'Build blocks and send them to relay')
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		
-		await doBlockBuilding(config, null)
+		await doBlockBuilding(config, config.buildOpts)
 	})
 
 export async function doBlockBuilding(c: ITaskConfig, opt?: IBuildOptions) {
@@ -185,6 +187,7 @@ export interface ITaskConfig {
 	suaveSigner: Wallet,
 	relayUrl: string,
 	beaconUrl: string,
+	buildOpts?: IBuildOptions,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
@@ -213,9 +216,13 @@ export function getEnvConfig(useTestnet: boolean = false) {
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const nSlots = parseInt(taskArgs.nslots)
+	const builderCName = taskArgs.blockad ? 'BlockAdAuctionV2' : 'Builder'
 	const builderAdd = taskArgs.builder
 		? taskArgs.builder
-		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
+		: await utils.fetchDeployedContract(hre, builderCName).then(c => c.address)
+	const buildOpts = taskArgs.blockad 
+		? { iface: adbidInterface, method: 'buildBlock' } 
+		: null
 
-	return { nSlots, builderAdd }
+	return { nSlots, builderAdd, buildOpts }
 }
