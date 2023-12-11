@@ -82,18 +82,18 @@ async function build(
 		} else {
 			if (c.resubmit && e.includes('{"code":400,"message":"payload attributes not (yet) known"}')) {
 				process.stdout.write('⏳ Resubmitting ... ')
+				const re = /\(yet\) known"\}\n','(?<builderBid>.*)'\)/
+				const builderBid = e.match(re)?.groups?.builderBid
+				if (builderBid) {
+					const bid = Buffer.from(builderBid.slice(2), 'hex').toString('utf8')
+					console.log(JSON.stringify(JSON.parse(bid), null, 2))
+					// ;[s, e] = await submitBlock(c, builderBid, bbArgs.slot, bopt)
+					// continue
+				}
 				await utils.sleep(3000)
 				;[s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
 				continue
 			}
-			// 	// const re = /\(yet\) known"\}\n','(?<builderBid>.*)'\)/
-			// 	// const builderBid = e.match(re)?.groups?.builderBid
-			// 	// if (builderBid) {
-			// 	// 	const bid = Buffer.from(builderBid.slice(2), 'hex').toString('utf8')
-			// 	// 	console.log(JSON.stringify(JSON.parse(bid), null, 2))
-			// 	// 	;[s, e] = await buildBlock(c, builderBid, bopt)
-			// 	//  continue
-			// 	// }	
 			console.log('❌')
 			console.log(e)
 			return false
