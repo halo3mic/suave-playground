@@ -53,6 +53,7 @@ async function submitAndBuild(c: ITaskConfig) {
 		suaveSigner: c.suaveSigner, 
 		builderAdd: c.adauctionAdd,
 		nSlots: c.blockrange,
+		resubmit: false
 	}
 	await doBlockBuilding(
 		buildConfig,
