@@ -310,17 +310,47 @@ contract EthBlockBidContract is AnyBidContract {
 contract EthBlockBidSenderContract is EthBlockBidContract {
 	string boostRelayUrl;
 
+	event RelaySubmissionEvent(
+		bytes blockHash
+	);
+
 	constructor(string memory boostRelayUrl_) {
 		boostRelayUrl = boostRelayUrl_;
+	}
+
+	function buildAndEmitCallback(bytes memory blockHash) external {
+		emit RelaySubmissionEvent(blockHash);
 	}
 
 	function buildAndEmit(Suave.BuildBlockArgs memory blockArgs, uint64 blockHeight, Suave.BidId[] memory bids, string memory namespace) public virtual override returns (bytes memory) {
 		require(Suave.isConfidential());
 
-		(Suave.Bid memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
+		(, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
 		Suave.submitEthBlockBidToRelay(boostRelayUrl, builderBid);
 
-		emit BidEvent(blockBid.id, blockBid.decryptionCondition, blockBid.allowedPeekers);
-		return bytes.concat(this.emitBid.selector, abi.encode(blockBid));
+		bytes memory blockHash = extractBlockHash(builderBid, blockArgs.slot);
+		return abi.encodeWithSelector(this.buildAndEmitCallback.selector, blockHash);
 	}
+
+	function extractBlockHash(bytes memory builderBid, uint slot) public pure returns (bytes memory) {
+		uint resultBytesLen = 64;
+		uint offset = 121 + decLen(slot);
+        bytes memory result = new bytes(resultBytesLen);
+		assembly { 
+			for { let i:=32 } lt(i, add(resultBytesLen, 32)) { i:=add(i, 32) } {
+				mstore(add(result, i), mload(add(builderBid, add(offset, i))))
+            }
+		}
+		return result;
+	}
+
+	function decLen(uint num) internal pure returns (uint count) {
+        assembly {
+            for { let dec := 10 } true { dec := mul(dec, 10) } {
+                count := add(count, 1)
+                switch lt(num, dec)
+                    case 1 { break }
+            }
+        }
+    }
 }

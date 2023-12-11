@@ -27,6 +27,33 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "SuaveError",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "SuaveErrorWithData",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -75,12 +102,12 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "bytes",
-        "name": "blockHash",
-        "type": "bytes"
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
       }
     ],
-    "name": "RelaySubmissionEvent",
+    "name": "RelaySubmission",
     "type": "event"
   },
   {
@@ -189,13 +216,24 @@
   {
     "inputs": [
       {
-        "internalType": "bytes",
+        "internalType": "string",
         "name": "blockHash",
-        "type": "bytes"
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
       }
     ],
     "name": "buildAndEmitCallback",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -679,9 +717,9 @@
     "name": "extractBlockHash",
     "outputs": [
       {
-        "internalType": "bytes",
+        "internalType": "string",
         "name": "",
-        "type": "bytes"
+        "type": "string"
       }
     ],
     "stateMutability": "pure",
@@ -722,6 +760,19 @@
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "submitBlock",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
