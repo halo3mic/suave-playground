@@ -8,6 +8,7 @@ import { Suave } from "../../standard_peekers/bids.sol";
 
 abstract contract SuaveContract {
 	error SuaveError(string message);
+	error SuaveErrorWithData(string message, bytes data);
 
 	modifier onlyConfidential() {
 		crequire(Suave.isConfidential(), "Not confidential");

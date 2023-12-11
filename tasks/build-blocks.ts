@@ -72,16 +72,49 @@ async function build(
 	bopt: IBuildOptions = null
 ): Promise<boolean> {
 	process.stdout.write(`👷‍ Building block for slot ${bbArgs.slot} (block ${blockHeight})... `)
-	const [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
-	if (s) {
-		console.log('✅')
-		await s.then(console.log)
-		return true
-	} else {
-		console.log('❌')
-		console.log(e)
-		return false
+	while (1) {
+		var [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
+		if (s) {
+			console.log('✅')
+			await s.then(console.log)
+			return true
+		} else {
+			// if (e.includes('relay request failed with code 400: {"code":400,"message":"payload attributes not (yet) known"}')) {
+			// 	// const re = /\(yet\) known"\}\n','(?<builderBid>.*)'\)/
+			// 	// const builderBid = e.match(re)?.groups?.builderBid
+			// 	// if (builderBid) {
+			// 	// 	const bid = Buffer.from(builderBid.slice(2), 'hex').toString('utf8')
+			// 	// 	console.log(JSON.stringify(JSON.parse(bid), null, 2))
+			// 	// 	;[s, e] = await buildBlock(c, builderBid, bopt)
+			// 	//  continue
+			// 	// }
+			// 	process.stdout.write('⏳ Resubmitting ... ')
+			// 	await utils.sleep(3000)
+			// 	;[s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
+			// 	continue
+			// }
+			console.log('❌')
+			console.log(e)
+			return false
+		}
 	}
+}
+
+async function resubmitBlock(c: ITaskConfig, builderBid: string, bopt: IBuildOptions = null) {
+	const iface = bopt?.iface || builderInterface
+	const calldata = iface.encodeFunctionData('submitBlock', [])
+	const confRec = await utils.createConfidentialComputeRecord(
+		c.suaveSigner,
+		calldata,
+		c.executionNodeAdd,
+		c.builderAdd,
+	)
+	console.log('Resubmitting block with builder bid', builderBid)
+	const inputBytes = new ConfidentialComputeRequest(confRec, builderBid)
+		.signWithWallet(c.suaveSigner)
+		.rlpEncode()
+	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'Resubmitting block')
+	return result
 }
 
 export async function buildBlock(

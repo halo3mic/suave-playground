@@ -38,6 +38,22 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "SuaveErrorWithData",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -101,6 +117,12 @@
         "internalType": "uint64",
         "name": "egp",
         "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "blockHash",
+        "type": "string"
       }
     ],
     "name": "RequestIncluded",
@@ -257,7 +279,7 @@
     "name": "builder",
     "outputs": [
       {
-        "internalType": "contract EthBlockBidSenderContract",
+        "internalType": "contract Builder",
         "name": "",
         "type": "address"
       }
@@ -498,6 +520,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "submitBlock",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
       }
     ],
     "stateMutability": "view",
