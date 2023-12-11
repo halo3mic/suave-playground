@@ -106,10 +106,6 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 			);
 	}
 
-	function submitBlock() onlyConfidential external view returns (bytes memory) {
-		return builder.submitBlock();
-	}
-
 	/**********************************************************************
 	 *                         🛠️ INTERNAL METHODS                          *
 	 ***********************************************************************/
