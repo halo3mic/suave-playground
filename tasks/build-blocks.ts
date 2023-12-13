@@ -29,6 +29,7 @@ task('build-blocks', 'Build blocks and send them to relay')
 	.addOptionalParam('nslots', 'Number of slots to build blocks for.', 1, types.int)
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.addFlag('blockad', 'Whether to build blocks for ad-bids')
+	.addFlag('resubmit', 'Whether to resubmit to relay on err `payload attributes not (yet) known`')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
@@ -72,15 +73,31 @@ async function build(
 	bopt: IBuildOptions = null
 ): Promise<boolean> {
 	process.stdout.write(`👷‍ Building block for slot ${bbArgs.slot} (block ${blockHeight})... `)
-	const [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
-	if (s) {
-		console.log('✅')
-		await s.then(console.log)
-		return true
-	} else {
-		console.log('❌')
-		console.log(e)
-		return false
+	for(;;) {
+		let [s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
+		if (s) {
+			console.log('✅')
+			await s.then(console.log)
+			return true
+		} else {
+			if (c.resubmit && e.includes('{"code":400,"message":"payload attributes not (yet) known"}')) {
+				process.stdout.write('⏳ Resubmitting ... ')
+				const re = /\(yet\) known"\}\n','(?<builderBid>.*)'\)/
+				const builderBid = e.match(re)?.groups?.builderBid
+				if (builderBid) {
+					const bid = Buffer.from(builderBid.slice(2), 'hex').toString('utf8')
+					console.log(JSON.stringify(JSON.parse(bid), null, 2))
+					// ;[s, e] = await submitBlock(c, builderBid, bbArgs.slot, bopt)
+					// continue
+				}
+				await utils.sleep(3000)
+				;[s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
+				continue
+			}
+			console.log('❌')
+			console.log(e)
+			return false
+		}
 	}
 }
 
@@ -98,6 +115,28 @@ export async function buildBlock(
 	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'BlockBuilding')
 	return result
 }
+
+// async function submitBlock(
+// 	c: ITaskConfig, 
+// 	builderBid: string, 
+// 	slot: number, 
+// 	bopt: IBuildOptions = null
+// ) {
+// 	const iface = bopt?.iface || builderInterface
+// 	const calldata = iface.encodeFunctionData('submitBlock', [slot])
+// 	const confRec = await utils.createConfidentialComputeRecord(
+// 		c.suaveSigner,
+// 		calldata,
+// 		c.executionNodeAdd,
+// 		c.builderAdd,
+// 	)
+// 	console.log('Resubmitting block with builder bid', builderBid)
+// 	const inputBytes = new ConfidentialComputeRequest(confRec, builderBid)
+// 		.signWithWallet(c.suaveSigner)
+// 		.rlpEncode()
+// 	const result = await utils.submitRawTxPrettyRes(c.suaveSigner.provider, inputBytes, iface, 'Submitting block')
+// 	return result
+// }
 
 async function makeBlockBuildConfRec(
 	c: ITaskConfig,
@@ -188,6 +227,7 @@ export interface ITaskConfig {
 	relayUrl: string,
 	beaconUrl: string,
 	buildOpts?: IBuildOptions,
+	resubmit: boolean,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
@@ -223,6 +263,7 @@ async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const buildOpts = taskArgs.blockad 
 		? { iface: adbidInterface, method: 'buildBlock' } 
 		: null
+	const resubmit = !!taskArgs.resubmit
 
-	return { nSlots, builderAdd, buildOpts }
+	return { nSlots, builderAdd, buildOpts, resubmit }
 }

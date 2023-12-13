@@ -53,18 +53,19 @@ async function submitAndBuild(c: ITaskConfig) {
 		suaveSigner: c.suaveSigner, 
 		builderAdd: c.adauctionAdd,
 		nSlots: c.blockrange,
+		resubmit: false
 	}
 	await doBlockBuilding(
 		buildConfig,
 		{ 
 			iface: adbidInterface, 
 			method: 'buildBlock',
-			precall: async () => {
-				return utils.sleep(4000).then(() => true)
-				// c.adBid += 0.002
-				// c.extra = '🔥 ' + c.adBid + ' 💧'
-				// return await submitAdBid(c)
-			}
+			// precall: async () => {
+			// 	return utils.sleep(4000).then(() => true)
+			// 	// c.adBid += 0.002
+			// 	// c.extra = '🔥 ' + c.adBid + ' 💧'
+			// 	// return await submitAdBid(c)
+			// }
 		}
 	)
 }

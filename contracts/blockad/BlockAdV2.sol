@@ -3,9 +3,10 @@
 
 pragma solidity ^0.8.8;
 
-import { EthBlockBidSenderContract, AnyBidContract, Suave } from "../standard_peekers/bids.sol";
+import { AnyBidContract, Suave } from "../standard_peekers/bids.sol";
 import { ConfidentialControl } from "./lib/ConfidentialControl.sol";
 import { DynamicUintArray } from "./lib/Utils.sol";
+import { Builder } from "./lib/Builder.sol";
 
 
 contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
@@ -26,12 +27,12 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 
 	event RequestAdded(uint id, string extra, uint blockLimit);
 	event RequestRemoved(uint id);
-	event RequestIncluded(uint id, uint64 egp);
+	event RequestIncluded(uint id, uint64 egp, string blockHash);
 
 	string internal constant PB_NAMESPACE = "blockad:v0:paymentBundle";
 	string internal constant EB_NAMESPACE = "default:v0:ethBundles";
 	string internal constant EB_SIM_NAMESPACE = "default:v0:ethBundleSimResults";
-	EthBlockBidSenderContract public builder;
+	Builder public builder;
 	AdRequest[] public requests;
 	uint public nextId;
 
@@ -40,7 +41,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 	 ***********************************************************************/
 
 	constructor(string memory boostRelayUrl_) {
-		builder = new EthBlockBidSenderContract(boostRelayUrl_);
+		builder = new Builder(boostRelayUrl_);
 	}
 
 	function buyAdCallback(AdRequest calldata request, UnlockArgs calldata uArgs) external unlock(uArgs) {
@@ -55,9 +56,11 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		bytes memory pendingRemovalsB,
 		UnlockArgs calldata uArgs
 	) external unlock(uArgs) {
-		handleIncludedRequest(includedRequestB);
-		if (pendingRemovalsB.length > 0) removeRequests(pendingRemovalsB.export());
-		executeExternalCallback(address(builder), builderCall);
+		if (pendingRemovalsB.length > 0) {
+			removeRequests(pendingRemovalsB.export());
+		}
+		string memory blockHash = handleBuilderCallback(address(builder), builderCall);
+		handleIncludedRequest(includedRequestB, blockHash);
 	}
 
 	function requestsLength() public view returns (uint) {
@@ -74,7 +77,8 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 
 	function buyAd(uint64 blockLimit, string memory extra) external onlyConfidential returns (bytes memory) {
 		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
-		crequire(Suave.simulateBundle(paymentBundle) != 0, "egp too low");
+		(,uint64 egp) = simulateBundleSafe(paymentBundle, true);
+		crequire(egp > 0, "egp too low");
 		Suave.BidId paymentBidId = storePaymentBundle(paymentBundle);
 		AdRequest memory request = AdRequest(nextId, extra, blockLimit, paymentBidId);
 		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
@@ -121,14 +125,15 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		}
 	}
 
-	function handleIncludedRequest(bytes memory includedRequestB) internal {
+	function handleIncludedRequest(bytes memory includedRequestB, string memory blockHash) internal {
 		(uint id, uint64 egp) = abi.decode(includedRequestB, (uint, uint64));
-		emit RequestIncluded(id, egp);
+		emit RequestIncluded(id, egp, blockHash);
 	}
 
-	function executeExternalCallback(address target, bytes memory data) internal {
-		(bool success, ) = target.call(data);
+	function handleBuilderCallback(address target, bytes memory data) internal returns (string memory) {
+		(bool success, bytes memory res) = target.call(data);
 		crequire(success, "External call failed");
+		return abi.decode(res, (string));
 	}
 
 	function storePaymentBundle(bytes memory paymentBundle) internal view returns (Suave.BidId) {
@@ -147,7 +152,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 				continue;
 			}
 			bytes memory paymentBundle = Suave.confidentialRetrieve(request.paymentBidId, PB_NAMESPACE);
-			(bool success, uint64 egp) = simulateBundleSafe(paymentBundle);
+			(bool success, uint64 egp) = simulateBundleSafe(paymentBundle, false);
 			if (!success || egp == 0) {
 				removals = removals.append(i);
 			} else if (egp > bestOffer.egp) {
