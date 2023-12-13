@@ -17,18 +17,18 @@ export function parseHexArg(arg: null | BigNumberish): string {
 	}
   
 	switch (typeof arg) {
-		case 'number':
-		case 'bigint':
-			return intToHex(arg)
-		case 'string':
-			if (ethers.utils.isHexString(arg)) {
-				return arg == '0x00' ? '0x' : hexFillEven(arg)
-			} else {
-				throw new Error(`Invalid hex string: ${arg}`)
-			}
-		default:
-			return '0x'
+	case 'number':
+	case 'bigint':
+		return intToHex(arg)
+	case 'string':
+		if (ethers.utils.isHexString(arg)) {
+			return arg == '0x00' ? '0x' : hexFillEven(arg)
+		} else {
+			throw new Error(`Invalid hex string: ${arg}`)
 		}
+	default:
+		return '0x'
+	}
 }
 
 export function getEnvValSafe(key: string): string {
