@@ -77,7 +77,8 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 
 	function buyAd(uint64 blockLimit, string memory extra) external onlyConfidential returns (bytes memory) {
 		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
-		crequire(Suave.simulateBundle(paymentBundle) != 0, "egp too low");
+		(,uint64 egp) = simulateBundleSafe(paymentBundle, true);
+		crequire(egp > 0, "egp too low");
 		Suave.BidId paymentBidId = storePaymentBundle(paymentBundle);
 		AdRequest memory request = AdRequest(nextId, extra, blockLimit, paymentBidId);
 		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
@@ -151,7 +152,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 				continue;
 			}
 			bytes memory paymentBundle = Suave.confidentialRetrieve(request.paymentBidId, PB_NAMESPACE);
-			(bool success, uint64 egp) = simulateBundleSafe(paymentBundle);
+			(bool success, uint64 egp) = simulateBundleSafe(paymentBundle, false);
 			if (!success || egp == 0) {
 				removals = removals.append(i);
 			} else if (egp > bestOffer.egp) {
