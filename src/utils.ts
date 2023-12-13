@@ -4,7 +4,7 @@ import path from 'path'
 
 
 export function keccak256(x: string): string {
-	return hexFillZero(ethers.utils.keccak256(x))
+	return hexFill32(ethers.utils.keccak256(x))
 }
 
 export function parseHexArg(arg: null | BigNumberish): string {
@@ -13,23 +13,22 @@ export function parseHexArg(arg: null | BigNumberish): string {
 	}
   
 	if (typeof arg === 'object' && 'toHexString' in arg) {
-		const x = arg.toHexString()
-		return x == '0x00' ? '0x' : x
+		arg = arg.toHexString()
 	}
   
 	switch (typeof arg) {
-	case 'number':
-	case 'bigint':
-		return intToHex(arg)
-	case 'string':
-		if (ethers.utils.isHexString(arg)) {
-			return arg
-		} else {
-			throw new Error(`Invalid hex string: ${arg}`)
+		case 'number':
+		case 'bigint':
+			return intToHex(arg)
+		case 'string':
+			if (ethers.utils.isHexString(arg)) {
+				return arg == '0x00' ? '0x' : hexFillEven(arg)
+			} else {
+				throw new Error(`Invalid hex string: ${arg}`)
+			}
+		default:
+			return '0x'
 		}
-	default:
-		return '0x'
-	}
 }
 
 export function getEnvValSafe(key: string): string {
@@ -74,11 +73,12 @@ export function intToHex(intVal: number | bigint): string {
 	return '0x' + hex
 }
 
-export function hexFillZero(hex: string): string {
-	if (hex.length % 2 != 0) {
-		hex = '0x0' + hex.slice(2)
-	}
-	return hex
+export function hexFill32(hex: string): string {
+	return '0x' + hex.slice(2).padStart(64, '0')
+}
+
+export function hexFillEven(hex: string): string {
+	return hex.length % 2 ? '0x0' + hex.slice(2) : hex
 }
 
 export function removeLeadingZeros(hex: string): string {
