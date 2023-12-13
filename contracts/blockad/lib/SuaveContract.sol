@@ -15,8 +15,9 @@ abstract contract SuaveContract {
 		_;
 	}
 
-	function simulateBundleSafe(bytes memory bundle) internal view returns (bool valid, uint64 egp) {
+	function simulateBundleSafe(bytes memory bundle, bool doRevert) internal view returns (bool valid, uint64 egp) {
 		(bool success, bytes memory d) = Suave.SIMULATE_BUNDLE.staticcall{ gas: 20_000 }(abi.encode(bundle));
+		crequire(!doRevert || success, string(d));
 		if (success) {
 			return (true, abi.decode(d, (uint64)));
 		}
