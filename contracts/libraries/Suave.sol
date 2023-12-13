@@ -27,6 +27,65 @@ library Suave {
         bytes extra;
     }
 
+    struct SubmitBlockRequest {
+        BidTrace message;
+        ExecutionPayload executionPayload;
+        bytes signature; // BLSSignature as bytes of fixed length 96
+    }
+
+    struct BidTrace {
+        uint256 slot;
+        bytes32 parentHash;
+        bytes32 blockHash;
+        bytes builderPubkey; // Representing BLSPubKey with dynamic bytes
+        bytes proposerPubkey;
+        address proposerFeeRecipient; // ExecutionAddress as Ethereum address
+        uint256 gasLimit;
+        uint256 gasUsed;
+        uint256 value; // uint256.Int as uint256
+    }
+
+    struct ExecutionPayload {
+        bytes32 parentHash;
+        address feeRecipient; // ExecutionAddress as Ethereum address
+        bytes32 stateRoot;
+        bytes32 receiptsRoot;
+        bytes32 logsBloom; // Assuming fixed size 256 bytes, may need adjustment
+        bytes32 prevRandao;
+        uint256 blockNumber;
+        uint256 gasLimit;
+        uint256 gasUsed;
+        uint256 timestamp;
+        bytes32 extraData; // Assuming fixed size, may need adjustment
+        bytes32 baseFeePerGas;
+        bytes32 blockHash;
+        bytes transactions; // Assuming Transaction is another struct
+        Withdrawal[] withdrawals; // Assuming Withdrawal is another struct
+    }
+
+    struct ExecutionPayloadEnvelope {
+        ExecutableData executionPayload;
+        uint256 blockValue;
+    }
+
+    struct ExecutableData {
+        bytes32 parentHash;
+        address feeRecipient;
+        bytes32 stateRoot;
+        bytes32 receiptsRoot;
+        bytes32 logsBloom; // Fixed size, change accordingly
+        bytes32 random;
+        uint256 number;
+        uint256 gasLimit;
+        uint256 gasUsed;
+        uint256 timestamp;
+        bytes32 extraData; // Fixed size, change accordingly
+        uint256 baseFeePerGas;
+        bytes32 blockHash;
+        bytes32[] transactions; // Fixed size arrays or handle dynamically
+        Withdrawal[] withdrawals; // Assuming Withdrawal is another struct
+    }
+
     struct Withdrawal {
         uint64 index;
         uint64 validator;
