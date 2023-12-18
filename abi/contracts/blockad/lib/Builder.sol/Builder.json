@@ -763,7 +763,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "slot",
+        "type": "uint256"
+      }
+    ],
     "name": "submitBlock",
     "outputs": [
       {
