@@ -3,20 +3,20 @@
 
 pragma solidity ^0.8.8;
 
-import { AnyBidContract, Suave } from "../standard_peekers/bids.sol";
+import { AnyBundleContract, Suave } from "../standard_peekers/bids.sol";
 import { ConfidentialControl } from "./lib/ConfidentialControl.sol";
 import { DynamicUintArray } from "./lib/Utils.sol";
 import { Builder } from "./lib/Builder.sol";
 
 
-contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
+contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 	using DynamicUintArray for bytes;
 
 	struct AdRequest {
 		uint id;
 		string extra;
 		uint blockLimit;
-		Suave.BidId paymentBidId;
+		Suave.DataId paymentBidId;
 	}
 	struct Offer {
 		uint id;
@@ -76,10 +76,10 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 	}
 
 	function buyAd(uint64 blockLimit, string memory extra) external onlyConfidential returns (bytes memory) {
-		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
+		bytes memory paymentBundle = this.fetchConfidentialBundleData();
 		(,uint64 egp) = simulateBundleSafe(paymentBundle, true);
 		crequire(egp > 0, "egp too low");
-		Suave.BidId paymentBidId = storePaymentBundle(paymentBundle);
+		Suave.DataId paymentBidId = storePaymentBundle(paymentBundle);
 		AdRequest memory request = AdRequest(nextId, extra, blockLimit, paymentBidId);
 		return abi.encodeWithSelector(this.buyAdCallback.selector, request, getUnlockPair());
 	}
@@ -136,10 +136,10 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		return abi.decode(res, (string));
 	}
 
-	function storePaymentBundle(bytes memory paymentBundle) internal view returns (Suave.BidId) {
+	function storePaymentBundle(bytes memory paymentBundle) internal view returns (Suave.DataId) {
 		address[] memory peekers = new address[](1);
 		peekers[0] = address(this);
-		Suave.Bid memory paymentBid = Suave.newBid(0, peekers, peekers, PB_NAMESPACE);
+		Suave.DataRecord memory paymentBid = Suave.newDataRecord(0, peekers, peekers, PB_NAMESPACE);
 		Suave.confidentialStore(paymentBid.id, PB_NAMESPACE, paymentBundle);
 		return paymentBid.id;
 	}
@@ -166,7 +166,7 @@ contract BlockAdAuctionV2 is AnyBidContract, ConfidentialControl {
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
 		allowedPeekers[2] = address(this);
-		Suave.Bid memory paymentBundleBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, EB_NAMESPACE);
+		Suave.DataRecord memory paymentBundleBid = Suave.newDataRecord(blockHeight, allowedPeekers, allowedPeekers, EB_NAMESPACE);
 		Suave.confidentialStore(paymentBundleBid.id, EB_NAMESPACE, bestOffer.paymentBundle);
 		Suave.confidentialStore(paymentBundleBid.id, EB_SIM_NAMESPACE, abi.encode(bestOffer.egp));
 	}

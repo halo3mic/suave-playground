@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { AnyBidContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
+import { AnyBundleContract, EthBlockBidSenderContract, Suave } from "../standard_peekers/bids.sol";
 
 
-contract BlockAdAuctionV1 is AnyBidContract {
+contract BlockAdAuctionV1 is AnyBundleContract {
 
 	struct AdBid {
 		string extra; 
-		Suave.BidId paymentBidId;
+		Suave.DataId paymentBidId;
 		uint blockHeight;
 	}
 
@@ -51,7 +51,7 @@ contract BlockAdAuctionV1 is AnyBidContract {
 	) external returns (bytes memory) {
 		require(Suave.isConfidential(), "Not confidential");
 		// Check payment is valid for the latest state
-		bytes memory paymentBundle = this.fetchBidConfidentialBundleData();
+		bytes memory paymentBundle = this.fetchConfidentialBundleData();
 		require(Suave.simulateBundle(paymentBundle) != 0, "Initial sim check failed");
 		
 		address[] memory allowedPeekers = new address[](1);
@@ -60,7 +60,7 @@ contract BlockAdAuctionV1 is AnyBidContract {
 		AdBid[] memory bids = new AdBid[](range);
 		for (uint64 b = blockStart; b < blockStart+range; b++) {
 			// Store payment bundle
-			Suave.Bid memory paymentBid = Suave.newBid(0, allowedPeekers, allowedPeekers, "blockad:v0:paymentBundle");
+			Suave.DataRecord memory paymentBid = Suave.newDataRecord(0, allowedPeekers, allowedPeekers, "blockad:v0:paymentBundle");
 			Suave.confidentialStore(paymentBid.id, "blockad:v0:paymentBundle", paymentBundle);
 			// Prepare bid data to be commited on-chain
 			bids[b-blockStart] = AdBid(extra, paymentBid.id, b);
@@ -95,7 +95,7 @@ contract BlockAdAuctionV1 is AnyBidContract {
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
 		allowedPeekers[2] = address(this);
-		Suave.Bid memory paymentBundleBid = Suave.newBid(blockHeight, allowedPeekers, allowedPeekers, "default:v0:ethBundles");
+		Suave.DataRecord memory paymentBundleBid = Suave.newDataRecord(blockHeight, allowedPeekers, allowedPeekers, "default:v0:ethBundles");
 		Suave.confidentialStore(paymentBundleBid.id, "default:v0:ethBundles", bestOffer.paymentBundle);
 		Suave.confidentialStore(paymentBundleBid.id, "default:v0:ethBundleSimResults", abi.encode(bestOffer.egp));
 		
