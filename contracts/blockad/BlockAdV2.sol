@@ -166,7 +166,12 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
 		allowedPeekers[2] = address(this);
-		Suave.DataRecord memory paymentBundleBid = Suave.newDataRecord(blockHeight, allowedPeekers, allowedPeekers, EB_NAMESPACE);
+		Suave.DataRecord memory paymentBundleBid = Suave.newDataRecord(
+			blockHeight, 
+			allowedPeekers, 
+			allowedPeekers, 
+			EB_NAMESPACE
+		);
 		Suave.confidentialStore(paymentBundleBid.id, EB_NAMESPACE, bestOffer.paymentBundle);
 		Suave.confidentialStore(paymentBundleBid.id, EB_SIM_NAMESPACE, abi.encode(bestOffer.egp));
 	}
