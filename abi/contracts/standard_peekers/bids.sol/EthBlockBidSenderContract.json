@@ -31,33 +31,8 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "Suave.BidId",
-        "name": "bidId",
-        "type": "bytes16"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint64",
-        "name": "decryptionCondition",
-        "type": "uint64"
-      },
-      {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "allowedPeekers",
-        "type": "address[]"
-      }
-    ],
-    "name": "BidEvent",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "Suave.BidId",
-        "name": "bidId",
+        "internalType": "Suave.DataId",
+        "name": "dataId",
         "type": "bytes16"
       },
       {
@@ -75,12 +50,24 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "bytes",
-        "name": "blockHash",
-        "type": "bytes"
+        "internalType": "Suave.DataId",
+        "name": "dataId",
+        "type": "bytes16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "decryptionCondition",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "address[]",
+        "name": "allowedPeekers",
+        "type": "address[]"
       }
     ],
-    "name": "RelaySubmissionEvent",
+    "name": "DataRecordEvent",
     "type": "event"
   },
   {
@@ -165,8 +152,8 @@
         "type": "uint64"
       },
       {
-        "internalType": "Suave.BidId[]",
-        "name": "bids",
+        "internalType": "Suave.DataId[]",
+        "name": "dataRecords",
         "type": "bytes16[]"
       },
       {
@@ -183,19 +170,6 @@
         "type": "bytes"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "blockHash",
-        "type": "bytes"
-      }
-    ],
-    "name": "buildAndEmitCallback",
-    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -467,8 +441,8 @@
         "type": "uint64"
       },
       {
-        "internalType": "Suave.BidId[]",
-        "name": "bids",
+        "internalType": "Suave.DataId[]",
+        "name": "records",
         "type": "bytes16[]"
       },
       {
@@ -482,12 +456,12 @@
       {
         "components": [
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "id",
             "type": "bytes16"
           },
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "salt",
             "type": "bytes16"
           },
@@ -512,7 +486,7 @@
             "type": "string"
           }
         ],
-        "internalType": "struct Suave.Bid",
+        "internalType": "struct Suave.DataRecord",
         "name": "",
         "type": "tuple"
       },
@@ -530,12 +504,12 @@
       {
         "components": [
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "id",
             "type": "bytes16"
           },
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "salt",
             "type": "bytes16"
           },
@@ -560,53 +534,8 @@
             "type": "string"
           }
         ],
-        "internalType": "struct Suave.Bid",
-        "name": "bid",
-        "type": "tuple"
-      }
-    ],
-    "name": "emitBid",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "Suave.BidId",
-            "name": "id",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "Suave.BidId",
-            "name": "salt",
-            "type": "bytes16"
-          },
-          {
-            "internalType": "uint64",
-            "name": "decryptionCondition",
-            "type": "uint64"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedPeekers",
-            "type": "address[]"
-          },
-          {
-            "internalType": "address[]",
-            "name": "allowedStores",
-            "type": "address[]"
-          },
-          {
-            "internalType": "string",
-            "name": "version",
-            "type": "string"
-          }
-        ],
-        "internalType": "struct Suave.Bid",
-        "name": "bid",
+        "internalType": "struct Suave.DataRecord",
+        "name": "dataRecord",
         "type": "tuple"
       },
       {
@@ -620,12 +549,12 @@
       {
         "components": [
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "id",
             "type": "bytes16"
           },
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "salt",
             "type": "bytes16"
           },
@@ -650,7 +579,7 @@
             "type": "string"
           }
         ],
-        "internalType": "struct Suave.Bid",
+        "internalType": "struct Suave.DataRecord",
         "name": "",
         "type": "tuple"
       },
@@ -666,30 +595,51 @@
   {
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "builderBid",
-        "type": "bytes"
-      },
-      {
-        "internalType": "uint256",
-        "name": "slot",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "Suave.DataId",
+            "name": "id",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "Suave.DataId",
+            "name": "salt",
+            "type": "bytes16"
+          },
+          {
+            "internalType": "uint64",
+            "name": "decryptionCondition",
+            "type": "uint64"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedPeekers",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address[]",
+            "name": "allowedStores",
+            "type": "address[]"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct Suave.DataRecord",
+        "name": "dataRecord",
+        "type": "tuple"
       }
     ],
-    "name": "extractBlockHash",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "pure",
+    "name": "emitDataRecord",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "fetchBidConfidentialBundleData",
+    "name": "fetchConfidentialBundleData",
     "outputs": [
       {
         "internalType": "bytes",
@@ -703,12 +653,12 @@
   {
     "inputs": [
       {
-        "internalType": "Suave.BidId",
+        "internalType": "Suave.DataId",
         "name": "_l",
         "type": "bytes16"
       },
       {
-        "internalType": "Suave.BidId",
+        "internalType": "Suave.DataId",
         "name": "_r",
         "type": "bytes16"
       }
@@ -727,8 +677,8 @@
   {
     "inputs": [
       {
-        "internalType": "Suave.BidId",
-        "name": "bidId",
+        "internalType": "Suave.DataId",
+        "name": "dataId",
         "type": "bytes16"
       },
       {

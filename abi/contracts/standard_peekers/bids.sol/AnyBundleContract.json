@@ -2,17 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "string[]",
-        "name": "builderUrls_",
-        "type": "string[]"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -50,25 +39,6 @@
     ],
     "name": "DataRecordEvent",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "builderUrls",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "inputs": [
@@ -126,35 +96,6 @@
       }
     ],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint64",
-        "name": "decryptionCondition",
-        "type": "uint64"
-      },
-      {
-        "internalType": "address[]",
-        "name": "dataAllowedPeekers",
-        "type": "address[]"
-      },
-      {
-        "internalType": "address[]",
-        "name": "dataAllowedStores",
-        "type": "address[]"
-      }
-    ],
-    "name": "newBundle",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "payable",
     "type": "function"
   }
 ]
