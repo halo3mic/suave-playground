@@ -82,6 +82,19 @@
   },
   {
     "inputs": [],
+    "name": "DO_HTTPREQUEST",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "ETHCALL",
     "outputs": [
       {
@@ -108,7 +121,7 @@
   },
   {
     "inputs": [],
-    "name": "FETCH_BIDS",
+    "name": "FETCH_DATA_RECORDS",
     "outputs": [
       {
         "internalType": "address",
@@ -147,7 +160,7 @@
   },
   {
     "inputs": [],
-    "name": "NEW_BID",
+    "name": "NEW_DATA_RECORD",
     "outputs": [
       {
         "internalType": "address",

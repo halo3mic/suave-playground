@@ -3,11 +3,11 @@
 
 pragma solidity ^0.8.8;
 
-import { EthBlockBidContract, Suave } from "../../standard_peekers/bids.sol";
+import { EthBlockContract, Suave } from "../../standard_peekers/bids.sol";
 import { SuaveContract } from "./SuaveContract.sol";
 
 
-contract Builder is EthBlockBidContract, SuaveContract {
+contract Builder is EthBlockContract, SuaveContract {
 	string constant BB_NAMESPACE = "blockad:v0:builderBid";
 	string boostRelayUrl;
 
@@ -25,10 +25,10 @@ contract Builder is EthBlockBidContract, SuaveContract {
 	function buildAndEmit(
 		Suave.BuildBlockArgs memory blockArgs,
 		uint64 blockHeight,
-		Suave.BidId[] memory bids,
+		Suave.DataId[] memory bids,
 		string memory namespace
 	) public virtual override onlyConfidential returns (bytes memory) {
-		(Suave.Bid memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
+		(Suave.DataRecord memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
 		storeBuilderBid(blockBid.id, builderBid);
 		submitToRelay(builderBid);
 		string memory blockHash = extractBlockHash(builderBid, blockArgs.slot);
@@ -50,7 +50,7 @@ contract Builder is EthBlockBidContract, SuaveContract {
 		}
 	}
 
-	function storeBuilderBid(Suave.BidId blockBidId, bytes memory builderBid) internal view {
+	function storeBuilderBid(Suave.DataId blockBidId, bytes memory builderBid) internal view {
 		address[] memory peekers = new address[](1);
 		peekers[0] = address(this);
 		Suave.confidentialStore(blockBidId, BB_NAMESPACE, builderBid);

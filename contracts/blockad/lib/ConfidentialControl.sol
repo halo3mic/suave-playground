@@ -20,7 +20,7 @@ abstract contract ConfidentialControl is SuaveContract {
 	}
 
 	string internal constant S_NAMESPACE = "blockad:v0:secret";
-	Suave.BidId internal secretBidId;
+	Suave.DataId internal secretBidId;
 	bytes32 internal presentHash;
 	uint internal nonce;
 
@@ -28,7 +28,7 @@ abstract contract ConfidentialControl is SuaveContract {
 	 *                           ⛓️ ON-CHAIN METHODS                       *
 	 ***********************************************************************/
 
-	function ccCallback(bytes32 nextHash, Suave.BidId sBidId) external {
+	function ccCallback(bytes32 nextHash, Suave.DataId sBidId) external {
 		crequire(!isInitialized(), "Already initialized");
 		presentHash = nextHash;
 		secretBidId = sBidId;
@@ -45,7 +45,7 @@ abstract contract ConfidentialControl is SuaveContract {
 	function confidentialConstructor() public view virtual onlyConfidential returns (bytes memory) {
 		crequire(!isInitialized(), "Already initialized");
 		bytes memory secret = Suave.confidentialInputs();
-		Suave.BidId sBidId = storeSecret(secret);
+		Suave.DataId sBidId = storeSecret(secret);
 		bytes32 nextHash = makeHash(abi.decode(secret, (bytes32)), nonce);
 		return abi.encodeWithSelector(this.ccCallback.selector, nextHash, sBidId);
 	}
@@ -54,12 +54,12 @@ abstract contract ConfidentialControl is SuaveContract {
 	 *                         🛠️ INTERNAL METHODS                          *
 	 ***********************************************************************/
 
-	function storeSecret(bytes memory secret) internal view returns (Suave.BidId) {
+	function storeSecret(bytes memory secret) internal view returns (Suave.DataId) {
 		address[] memory peekers = new address[](3);
 		peekers[0] = address(this);
-		peekers[1] = Suave.FETCH_BIDS;
+		peekers[1] = Suave.FETCH_DATA_RECORDS;
 		peekers[2] = Suave.CONFIDENTIAL_RETRIEVE;
-		Suave.Bid memory secretBid = Suave.newBid(0, peekers, peekers, S_NAMESPACE);
+		Suave.DataRecord memory secretBid = Suave.newDataRecord(0, peekers, peekers, S_NAMESPACE);
 		Suave.confidentialStore(secretBid.id, S_NAMESPACE, secret);
 		return secretBid.id;
 	}

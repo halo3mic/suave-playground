@@ -58,8 +58,8 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "Suave.BidId",
-        "name": "bidId",
+        "internalType": "Suave.DataId",
+        "name": "dataId",
         "type": "bytes16"
       },
       {
@@ -75,14 +75,14 @@
         "type": "address[]"
       }
     ],
-    "name": "BidEvent",
+    "name": "DataRecordEvent",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
@@ -107,7 +107,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
@@ -132,7 +132,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "id",
         "type": "uint256"
@@ -331,7 +331,7 @@
             "type": "uint256"
           },
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "paymentBidId",
             "type": "bytes16"
           }
@@ -371,7 +371,7 @@
         "type": "bytes32"
       },
       {
-        "internalType": "Suave.BidId",
+        "internalType": "Suave.DataId",
         "name": "sBidId",
         "type": "bytes16"
       }
@@ -399,12 +399,12 @@
       {
         "components": [
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "id",
             "type": "bytes16"
           },
           {
-            "internalType": "Suave.BidId",
+            "internalType": "Suave.DataId",
             "name": "salt",
             "type": "bytes16"
           },
@@ -429,19 +429,19 @@
             "type": "string"
           }
         ],
-        "internalType": "struct Suave.Bid",
-        "name": "bid",
+        "internalType": "struct Suave.DataRecord",
+        "name": "dataRecord",
         "type": "tuple"
       }
     ],
-    "name": "emitBid",
+    "name": "emitDataRecord",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "fetchBidConfidentialBundleData",
+    "name": "fetchConfidentialBundleData",
     "outputs": [
       {
         "internalType": "bytes",
@@ -504,7 +504,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "Suave.BidId",
+        "internalType": "Suave.DataId",
         "name": "paymentBidId",
         "type": "bytes16"
       }
@@ -520,19 +520,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "submitBlock",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
       }
     ],
     "stateMutability": "view",

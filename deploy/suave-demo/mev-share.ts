@@ -3,7 +3,7 @@ import { makeDeployCallback, DeployOptions } from '../deploy-utils'
 
 const deployOptions: DeployOptions = {
 	name: 'MevShare', 
-	contractName: 'MevShareBidContract', 
+	contractName: 'MevShareContract', 
 	args: [], 
 	tags: [ 'mevshare' ]
 }

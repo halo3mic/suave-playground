@@ -2,17 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "boostRelayUrl_",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -24,33 +13,6 @@
       }
     ],
     "name": "PeekerReverted",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "message",
-        "type": "string"
-      }
-    ],
-    "name": "SuaveError",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "message",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
-    ],
-    "name": "SuaveErrorWithData",
     "type": "error"
   },
   {
@@ -95,19 +57,6 @@
       }
     ],
     "name": "DataRecordEvent",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "bidId",
-        "type": "bytes32"
-      }
-    ],
-    "name": "RelaySubmission",
     "type": "event"
   },
   {
@@ -193,7 +142,7 @@
       },
       {
         "internalType": "Suave.DataId[]",
-        "name": "bids",
+        "name": "records",
         "type": "bytes16[]"
       },
       {
@@ -208,30 +157,6 @@
         "internalType": "bytes",
         "name": "",
         "type": "bytes"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "blockHash",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "id",
-        "type": "bytes32"
-      }
-    ],
-    "name": "buildAndEmitCallback",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
       }
     ],
     "stateMutability": "nonpayable",
@@ -702,30 +627,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "builderBid",
-        "type": "bytes"
-      },
-      {
-        "internalType": "uint256",
-        "name": "slot",
-        "type": "uint256"
-      }
-    ],
-    "name": "extractBlockHash",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "fetchConfidentialBundleData",
     "outputs": [
@@ -760,25 +661,6 @@
       }
     ],
     "stateMutability": "pure",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "slot",
-        "type": "uint256"
-      }
-    ],
-    "name": "submitBlock",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {

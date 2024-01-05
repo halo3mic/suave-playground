@@ -50,7 +50,7 @@
         "type": "bytes32"
       },
       {
-        "internalType": "Suave.BidId",
+        "internalType": "Suave.DataId",
         "name": "sBidId",
         "type": "bytes16"
       }
