@@ -25,9 +25,9 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 		bytes paymentBundle;
 	}
 
-	event RequestAdded(uint id, string extra, uint blockLimit);
-	event RequestRemoved(uint id);
-	event RequestIncluded(uint id, uint64 egp, string blockHash);
+	event RequestAdded(uint indexed id, string extra, uint blockLimit);
+	event RequestRemoved(uint indexed id);
+	event RequestIncluded(uint indexed id, uint64 egp, string blockHash);
 
 	string internal constant PB_NAMESPACE = "blockad:v0:paymentBundle";
 	string internal constant EB_NAMESPACE = "default:v0:ethBundles";
