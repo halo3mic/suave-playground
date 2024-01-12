@@ -211,6 +211,11 @@
             "internalType": "bytes",
             "name": "extra",
             "type": "bytes"
+          },
+          {
+            "internalType": "bool",
+            "name": "fillPending",
+            "type": "bool"
           }
         ],
         "internalType": "struct Suave.BuildBlockArgs",
