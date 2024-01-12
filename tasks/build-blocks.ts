@@ -160,6 +160,7 @@ function makeCalldata(
 	iface?: ethers.utils.Interface, 
 	method?: string
 ) {
+	const fillPending = true
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,
@@ -169,7 +170,8 @@ function makeCalldata(
 		bbArgs.gasLimit,
 		bbArgs.random,
 		bbArgs.withdrawals.map(w => [ w.index, w.validator, w.address, w.amount ]),
-		ethers.constants.HashZero
+		ethers.constants.HashZero,
+		fillPending,
 	]
 	if (!method)
 		method = 'buildMevShare'
