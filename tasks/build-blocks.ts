@@ -229,7 +229,7 @@ export interface ITaskConfig {
 	relayUrl: string,
 	beaconUrl: string,
 	buildOpts?: IBuildOptions,
-	resubmit: boolean,
+	resubmit?: boolean,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
