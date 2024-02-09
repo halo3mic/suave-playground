@@ -30,7 +30,7 @@
     "solady": "^0.0.166",
     "solhint": "^4.0.0",
     "solhint-plugin-prettier": "^0.1.0",
-    "suave-std": "https://github.com/flashbots/suave-std",
+    "solidity-rlp": "^2.0.8",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   },

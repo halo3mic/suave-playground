@@ -8182,6 +8182,11 @@ solidity-comments-extractor@^0.0.7:
   resolved "https://registry.yarnpkg.com/solidity-comments-extractor/-/solidity-comments-extractor-0.0.7.tgz#99d8f1361438f84019795d928b931f4e5c39ca19"
   integrity sha512-wciNMLg/Irp8OKGrh3S2tfvZiZ0NEyILfcRCXCD4mp7SgK/i9gzLfhY2hY7VMCQJ3kH9UB9BzNdibIVMchzyYw==
 
+solidity-rlp@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/solidity-rlp/-/solidity-rlp-2.0.8.tgz#1548370b690ef06dbb62af06b7675bc86b19bbe3"
+  integrity sha512-gzYzHoFKRH1ydJeCfzm3z/BvKrZGK/V9+qbOlNbBcRAYeizjCdDNhLTTE8iIJrHqsRrZRSOo+7mhbnxoBoZvJQ==
+
 source-map-resolve@^0.5.0:
   version "0.5.3"
   resolved "https://registry.yarnpkg.com/source-map-resolve/-/source-map-resolve-0.5.3.tgz#190866bece7553e1f8f267a2ee82c606b5509a1a"
@@ -8416,7 +8421,7 @@ strip-json-comments@~2.0.1:
 
 "suave-std@https://github.com/flashbots/suave-std":
   version "0.0.0"
-  resolved "https://github.com/flashbots/suave-std#eae3da6423bcd4f83e435bb5488b7c03dd1bed11"
+  resolved "https://github.com/flashbots/suave-std#264f908f04f1d55a376b6cfd5a14bd3265fe8a43"
 
 supports-color@8.1.1:
   version "8.1.1"

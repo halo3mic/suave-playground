@@ -160,7 +160,7 @@ function makeCalldata(
 	iface?: ethers.utils.Interface, 
 	method?: string
 ) {
-	const fillPending = true
+	const fillPending = false
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,

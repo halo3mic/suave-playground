@@ -43,7 +43,7 @@ contract Builder is EthBlockContract, SuaveContract {
 	}
 
 	function submitToRelay(bytes memory builderBid) internal view {
-		(bool success, bytes memory data) = Suave.SUBMIT_ETH_BLOCK_BID_TO_RELAY
+		(bool success, bytes memory data) = Suave.SUBMIT_ETH_BLOCK_TO_RELAY
 			.staticcall(abi.encode(boostRelayUrl, builderBid));
 		if (!success) {
 			revert SuaveErrorWithData(string(data), builderBid);
