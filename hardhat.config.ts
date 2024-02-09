@@ -22,7 +22,7 @@ const RIGIL_RPC = getEnvValSafe('RIGIL_RPC')
 
 
 export default {
-	solidity: '0.8.8',
+	solidity: '0.8.13',
 	defaultNetwork: 'suave',
 	namedAccounts: {
 		deployer: {
