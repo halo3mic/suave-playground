@@ -176,6 +176,11 @@
             "type": "bytes"
           },
           {
+            "internalType": "bytes32",
+            "name": "parentBeaconBlockRoot",
+            "type": "bytes32"
+          },
+          {
             "internalType": "bool",
             "name": "fillPending",
             "type": "bool"
