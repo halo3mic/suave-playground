@@ -160,7 +160,7 @@ function makeCalldata(
 	iface?: ethers.utils.Interface, 
 	method?: string
 ) {
-	const fillPending = true
+	const fillPending = false
 	const blockArgs = [
 		bbArgs.slot,
 		bbArgs.proposerPubkey,
@@ -171,6 +171,7 @@ function makeCalldata(
 		bbArgs.random,
 		bbArgs.withdrawals.map(w => [ w.index, w.validator, w.address, w.amount ]),
 		ethers.constants.HashZero,
+		bbArgs.parentBeaconBlockRoot,
 		fillPending,
 	]
 	if (!method)
@@ -190,6 +191,7 @@ export interface BuildBlockArgs {
 	gasLimit: number;
 	random: string;
 	withdrawals: Withdrawal[];
+	parentBeaconBlockRoot: string;
 }
 
 interface Withdrawal {
@@ -217,6 +219,7 @@ export function makeBuildBlockArgs(beacon: BeaconEventData, validator: Validator
 		feeRecipient: validator.feeRecipient,
 		gasLimit: validator.gasLimit,
 		proposerPubkey: validator.pubkey,
+		parentBeaconBlockRoot: beacon.payload_attributes.parent_beacon_block_root,
 	}
 	
 }
@@ -229,7 +232,7 @@ export interface ITaskConfig {
 	relayUrl: string,
 	beaconUrl: string,
 	buildOpts?: IBuildOptions,
-	resubmit: boolean,
+	resubmit?: boolean,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
