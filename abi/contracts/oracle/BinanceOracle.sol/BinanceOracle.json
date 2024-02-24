@@ -48,11 +48,17 @@
       {
         "indexed": false,
         "internalType": "string",
-        "name": "message",
+        "name": "ticker",
         "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
       }
     ],
-    "name": "Log",
+    "name": "PriceSubmission",
     "type": "event"
   },
   {
@@ -147,7 +153,7 @@
         "type": "bytes"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -156,6 +162,11 @@
         "internalType": "Suave.DataId",
         "name": "_pkBidId",
         "type": "bytes16"
+      },
+      {
+        "internalType": "address",
+        "name": "pkAddress",
+        "type": "address"
       }
     ],
     "name": "confidentialConstructorCallback",
@@ -164,19 +175,13 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "idxToTicker",
+    "inputs": [],
+    "name": "controller",
     "outputs": [
       {
-        "internalType": "string",
+        "internalType": "address",
         "name": "",
-        "type": "string"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -227,12 +232,17 @@
   {
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "response",
-        "type": "bytes"
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
       }
     ],
-    "name": "queryLatestPriceCallback",
+    "name": "queryAndSubmitCallback",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -240,37 +250,20 @@
   {
     "inputs": [
       {
-        "internalType": "bytes",
-        "name": "txSigned",
-        "type": "bytes"
-      },
-      {
-        "internalType": "uint64",
-        "name": "settlementBlockNum",
-        "type": "uint64"
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
       }
     ],
-    "name": "sendBundle",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
+    "name": "queryLatestPrice",
+    "outputs": [
       {
-        "internalType": "bytes",
-        "name": "txSigned",
-        "type": "bytes"
-      },
-      {
-        "internalType": "uint64",
-        "name": "settlementBlockNum",
-        "type": "uint64"
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
       }
     ],
-    "name": "sendTxViaBundle",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   }
 ]

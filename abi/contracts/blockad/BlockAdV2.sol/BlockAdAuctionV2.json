@@ -213,6 +213,11 @@
             "type": "bytes"
           },
           {
+            "internalType": "bytes32",
+            "name": "beaconRoot",
+            "type": "bytes32"
+          },
+          {
             "internalType": "bool",
             "name": "fillPending",
             "type": "bool"

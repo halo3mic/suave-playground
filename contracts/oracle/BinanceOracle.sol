@@ -3,7 +3,6 @@ TODO:
 * Settlement contract
 * Optional Backrunning
 * Coinbase API
-* Kettle signature
  */
 
 // SPDX-License-Identifier: MIT
@@ -13,7 +12,7 @@ pragma solidity ^0.8.13;
 
 import { AnyBundleContract, Suave } from "../standard_peekers/bids.sol";
 import { SuaveContract } from "../blockad/lib/SuaveContract.sol";
-import { floatToInt, trimStrEdges } from  "./lib/Utils.sol";
+import { floatToInt, trimStrEdges, getAddressForPk } from  "./lib/Utils.sol";
 import "../../node_modules/solady/src/utils/JSONParserLib.sol";
 import "../libraries/Transactions.sol";
 import "../libraries/Bundle.sol";
@@ -32,14 +31,16 @@ contract BinanceOracle is SuaveContract {
     
     bool isInitialized;
     Suave.DataId public pkBidId;
+    address public controller;
 
     event PriceSubmission(string ticker, uint price);
 
     // ⛓️ EVM Methods
 
-    function confidentialConstructorCallback(Suave.DataId _pkBidId) public {
+    function confidentialConstructorCallback(Suave.DataId _pkBidId, address pkAddress) public {
         crequire(!isInitialized, "Already initialized");
         pkBidId = _pkBidId;
+        controller = pkAddress;
         isInitialized = true;
     }
 
@@ -54,19 +55,24 @@ contract BinanceOracle is SuaveContract {
 
     // 🤐 MEVM Methods
 
-    function confidentialConstructor() external view onlyConfidential returns (bytes memory) {
+    function confidentialConstructor() external onlyConfidential returns (bytes memory) {
         crequire(!isInitialized, "Already initialized");
-        bytes memory pk = Suave.confidentialInputs();
-		Suave.DataId bidId = storePK(pk);
+        string memory pk = Suave.privateKeyGen();
+        address pkAddress = getAddressForPk(pk);
+		Suave.DataId bidId = storePK(bytes(pk));
 
-        return abi.encodeWithSelector(this.confidentialConstructorCallback.selector, bidId);
+        return abi.encodeWithSelector(
+            this.confidentialConstructorCallback.selector, 
+            bidId, 
+            pkAddress
+        );
     }
 
     function queryAndSubmit(
         string memory ticker, 
         uint nonce, 
         uint64 settlementBlockNum
-    ) external view onlyConfidential returns (uint) {
+    ) external onlyConfidential returns (uint) {
         uint price = queryLatestPrice(ticker);
         submitPriceUpdate(price, nonce, settlementBlockNum);
         return price;
@@ -83,15 +89,15 @@ contract BinanceOracle is SuaveContract {
         uint price, 
         uint nonce,
         uint64 settlementBlockNum
-    ) internal view {
+    ) internal {
         bytes memory signedTx = createTransaction(price, nonce);
         sendBundle(signedTx, settlementBlockNum);
     }
 
-    function createTransaction(uint price, uint nonce) internal view returns (bytes memory txSigned)  {
+    function createTransaction(uint price, uint nonce) internal returns (bytes memory txSigned)  {
         Transactions.EIP155 memory transaction = Transactions.EIP155({
             nonce: nonce,
-            gasPrice: 40 gwei,
+            gasPrice: 100 gwei,
             gas: 100_000,
             to: address(0),
             value: 0,
@@ -164,7 +170,7 @@ contract BinanceOracle is SuaveContract {
         return params;
     }
 
-    function storePK(bytes memory pk) internal view returns (Suave.DataId) {
+    function storePK(bytes memory pk) internal returns (Suave.DataId) {
 		address[] memory peekers = new address[](3);
 		peekers[0] = address(this);
 		peekers[1] = Suave.FETCH_DATA_RECORDS;
@@ -174,7 +180,7 @@ contract BinanceOracle is SuaveContract {
 		return secretBid.id;
 	}
 
-    function retreivePK() internal view returns (string memory) {
+    function retreivePK() internal returns (string memory) {
         bytes memory pkBytes =  Suave.confidentialRetrieve(pkBidId, S_NAMESPACE);
         return string(pkBytes);
     }
