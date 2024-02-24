@@ -56,6 +56,114 @@
     "type": "event"
   },
   {
+    "stateMutability": "payable",
+    "type": "fallback"
+  },
+  {
+    "inputs": [],
+    "name": "DECIMALS",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GOERLI_BUNDLE_ENDPOINT",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GOERLI_CHAINID",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "GOERLI_CHAINID_STR",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "S_NAMESPACE",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "URL_PARTIAL",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "confidentialConstructor",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Suave.DataId",
+        "name": "_pkBidId",
+        "type": "bytes16"
+      }
+    ],
+    "name": "confidentialConstructorCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -75,22 +183,45 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "pkBidId",
+    "outputs": [
+      {
+        "internalType": "Suave.DataId",
+        "name": "",
+        "type": "bytes16"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
         "name": "ticker",
         "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint64",
+        "name": "settlementBlockNum",
+        "type": "uint64"
       }
     ],
-    "name": "queryLatestPrice",
+    "name": "queryAndSubmit",
     "outputs": [
       {
-        "internalType": "bytes",
+        "internalType": "uint256",
         "name": "",
-        "type": "bytes"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -107,16 +238,39 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "urlPartial",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
+        "internalType": "bytes",
+        "name": "txSigned",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint64",
+        "name": "settlementBlockNum",
+        "type": "uint64"
       }
     ],
-    "stateMutability": "view",
+    "name": "sendBundle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "txSigned",
+        "type": "bytes"
+      },
+      {
+        "internalType": "uint64",
+        "name": "settlementBlockNum",
+        "type": "uint64"
+      }
+    ],
+    "name": "sendTxViaBundle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]
