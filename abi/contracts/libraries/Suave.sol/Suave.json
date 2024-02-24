@@ -160,6 +160,19 @@
   },
   {
     "inputs": [],
+    "name": "NEW_BUILDER",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "NEW_DATA_RECORD",
     "outputs": [
       {
@@ -186,7 +199,33 @@
   },
   {
     "inputs": [],
+    "name": "SIGN_MESSAGE",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "SIMULATE_BUNDLE",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SIMULATE_TRANSACTION",
     "outputs": [
       {
         "internalType": "address",
@@ -212,7 +251,7 @@
   },
   {
     "inputs": [],
-    "name": "SUBMIT_ETH_BLOCK_BID_TO_RELAY",
+    "name": "SUBMIT_ETH_BLOCK_TO_RELAY",
     "outputs": [
       {
         "internalType": "address",

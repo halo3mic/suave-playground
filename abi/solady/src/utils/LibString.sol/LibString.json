@@ -1,0 +1,12 @@
+[
+  {
+    "inputs": [],
+    "name": "HexLengthInsufficient",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TooBigForSmallString",
+    "type": "error"
+  }
+]
