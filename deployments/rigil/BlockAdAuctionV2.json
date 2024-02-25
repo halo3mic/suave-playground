@@ -580,7 +580,7 @@
         "label": "secretBidId",
         "offset": 0,
         "slot": "0",
-        "type": "t_userDefinedValueType(DataId)1886"
+        "type": "t_userDefinedValueType(DataId)2393"
       },
       {
         "astId": 1387,
@@ -679,7 +679,7 @@
             "label": "paymentBidId",
             "offset": 0,
             "slot": "3",
-            "type": "t_userDefinedValueType(DataId)1886"
+            "type": "t_userDefinedValueType(DataId)2393"
           }
         ],
         "numberOfBytes": "128"
@@ -689,10 +689,10 @@
         "label": "uint256",
         "numberOfBytes": "32"
       },
-      "t_userDefinedValueType(DataId)1886": {
+      "t_userDefinedValueType(DataId)2393": {
         "encoding": "inplace",
         "label": "Suave.DataId",
-        "numberOfBytes": "32"
+        "numberOfBytes": "16"
       }
     }
   }
