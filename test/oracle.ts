@@ -68,6 +68,7 @@ describe('oracle', async () => {
 
     it('queryAndSubmit', async () => {
         const ticker = 'ETHUSDT'
+        const privateSubmission = true
         const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
         const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
         
@@ -132,7 +133,8 @@ describe('oracle', async () => {
                     ticker,
                     controllerNonce,
                     gasPrice,
-                    nextGoerliBlock
+                    nextGoerliBlock, 
+                    privateSubmission
                 )
                 const receipt = await submissionRes.wait()
                 expect(receipt.status).to.equal(1)
