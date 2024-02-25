@@ -83,10 +83,11 @@ contract BinanceOracle is SuaveContract {
         string memory ticker, 
         uint nonce,
         uint gasPrice,
-        uint64 settlementBlockNum
+        uint64 settlementBlockNum,
+        bool privateSubmission
     ) external view onlyConfidential returns (uint) {
         uint price = queryLatestPrice(ticker);
-        submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum);
+        submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum, privateSubmission);
         return price;
     }
 
@@ -102,11 +103,15 @@ contract BinanceOracle is SuaveContract {
         uint price, 
         uint nonce,
         uint gasPrice,
-        uint64 settlementBlockNum
+        uint64 settlementBlockNum,
+        bool privateSubmission
     ) internal view {
         bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce, gasPrice);
-        // sendBundle(signedTx, settlementBlockNum);
-        sendRawTx(signedTx);
+        if (privateSubmission) {
+            sendBundle(signedTx, settlementBlockNum);
+        } else {
+            sendRawTx(signedTx);
+        }
     }
 
     function createRegisterTx(address _settlementContract) internal view returns (bytes memory txSigned) {

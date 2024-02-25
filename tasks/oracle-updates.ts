@@ -11,6 +11,7 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 	.addParam('ticker', 'Binance ticker of the asset to update')
 	.addOptionalParam('nblocks', 'Number of blocks to send bundles for. Default is two.', 1, types.int)
 	.addOptionalParam('oracle', 'Address of the oracle contract. By default fetch most recently deployed one.')
+	.addFlag('privateSubmission', 'Whether to submit the oracle updates via bundles. By default use public RPC.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
 
@@ -41,7 +42,8 @@ async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nex
 			c.ticker,
 			nonce,
 			gasPrice,
-			nextGoerliBlock
+			nextGoerliBlock,
+			c.privateSubmission
 		)
 		const receipt = await submissionRes.wait()
 		if (receipt.status === 0) {
@@ -59,10 +61,11 @@ interface ITaskConfig {
 	suaveSigner: SuaveWallet,
 	oracleContract: SuaveContract,
 	ticker: string,
+	privateSubmission: boolean
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
-	const { nblocks, ticker, oracleContract: oc } = await parseTaskArgs(hre, taskArgs)
+	const { nblocks, ticker, oracleContract: oc, privateSubmission } = await parseTaskArgs(hre, taskArgs)
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
 	const goerliSigner = utils.makeGoerliSigner()
 
@@ -81,11 +84,13 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 		executionNodeAdd,
 		goerliSigner,
 		suaveSigner,
-		oracleContract
+		oracleContract,
+		privateSubmission
 	}
 }
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
+	const privateSubmission = taskArgs.privateSubmission
 	const nblocks = parseInt(taskArgs.nblocks)
 	const ticker = taskArgs.ticker
 	if (!ticker) throw new Error('Ticker is required')
@@ -95,5 +100,5 @@ async function parseTaskArgs(hre: HRE, taskArgs: any) {
 		: utils.fetchDeployedContract(hre, 'BinanceOracle')
 	)
 
-	return { nblocks, ticker, oracleContract }
+	return { nblocks, ticker, oracleContract, privateSubmission }
 }
