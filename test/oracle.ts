@@ -52,37 +52,78 @@ describe('oracle', async () => {
         expect(resPrice).to.be.lessThan(70_000*10**4) // ikr so pessimistic
     })
 
-    it.only('queryAndSubmit', async () => {
+    it('sendRawTransaction', async () => {
+        const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
+        const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
+        const signedTx = await goerliSigner.signTransaction({
+            to: goerliSigner.address,
+            data: ethers.utils.toUtf8Bytes('hello'),
+            gasLimit: 60000,
+            gasPrice: ethers.utils.parseUnits('80', 'gwei'),
+            nonce: await goerliSigner.getTransactionCount()
+        })
+        const res = await OracleContract.sendRawTx.sendConfidentialRequest(signedTx)
+        console.log(res.confidentialComputeResult)
+    })
+
+    it('queryAndSubmit', async () => {
         const ticker = 'ETHUSDT'
-        const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)   
+        const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
+        const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
+        
+        // Deploy oracle settlement contract
+        const settlementContract = await ethers.getContractFactory('OracleSettlementContract')
+            .then(async (factory) => {
+                const contract = await factory.connect(goerliSigner).deploy()
+                const r = await contract.deployTransaction.wait()
+                expect(r.status).to.equal(1)
+                return contract
+            })
+            .catch((err) => {
+                throw new Error(err)
+            })
+
+        console.log("Settlement contract: ", settlementContract.address)
 
         // Init the contract
-        const initRes = await OracleContract.confidentialConstructor.sendConfidentialRequest({})
+        const initRes = await OracleContract.confidentialConstructor
+            .sendConfidentialRequest({})
         const receipt = await initRes.wait()
         if (receipt.status == 0)
             throw new Error('ConfidentialInit callback failed')
         const controllerAddress = await OracleContract.controller()
 
         // Send gas to the controller
-        const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
         const payReceipt = await goerliSigner.sendTransaction({
             to: controllerAddress,
-            value: ethers.utils.parseEther('0.01')
+            value: ethers.utils.parseEther('0.02')
         }).then(tx => tx.wait())
         expect(payReceipt.status).to.equal(1)
-        console.log(controllerAddress)
+
+        // Register
+        const registerRes = await OracleContract.registerSettlementContract
+            .sendConfidentialRequest(settlementContract.address)
+        const registerReceipt = await registerRes.wait()
+        if (registerReceipt.status == 0)
+            throw new Error('ConfidentialInit callback failed')
+        
+        while (true) {
+            const nonce = await goerliProvider.getTransactionCount(controllerAddress)
+            if (nonce == 1) {
+                break
+            }
+            await sleep(2000)
+        }
 
         // Submit oracle updates for the next N blocks
-        let controllerNonce = 0
-        for (let i=0; i<20; i++) {
+        let controllerNonce = 1
+        for (let i=0; i<100; i++) {
             const nextGoerliBlock = (await goerliProvider.getBlockNumber()) + 1
             console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
             // Obtain the present nonce on the settlement layer
             const newControllerNonce = await goerliProvider.getTransactionCount(controllerAddress)
             // Exit if the settlement tx landed (signer's nonce changed)
-            
-            console.log(newControllerNonce, controllerNonce, newControllerNonce)
-            if (newControllerNonce !== controllerNonce) {
+            if (newControllerNonce == 2) {
                 return
             }
 
@@ -97,9 +138,13 @@ describe('oracle', async () => {
             } catch (err) {
                 console.log(err)
             }
-            await new Promise(resolve => setTimeout(resolve, 10_000))
+            await sleep(10_000)
         }
         throw new Error('efforts were to no avail')
     }).timeout(1e6)
 
 })
+
+async function sleep(ms) {
+    new Promise(resolve => setTimeout(resolve, ms))
+}
