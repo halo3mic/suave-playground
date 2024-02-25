@@ -1,10 +1,3 @@
-/**
-TODO:
-* Optional Backrunning
-* Coinbase API
-* gasprice as variable
- */
-
 // SPDX-License-Identifier: MIT
 // Author: Miha Lotric (halo3mic)
 
@@ -88,11 +81,12 @@ contract BinanceOracle is SuaveContract {
 
     function queryAndSubmit(
         string memory ticker, 
-        uint nonce, 
+        uint nonce,
+        uint gasPrice,
         uint64 settlementBlockNum
     ) external view onlyConfidential returns (uint) {
         uint price = queryLatestPrice(ticker);
-        submitPriceUpdate(ticker, price, nonce, settlementBlockNum);
+        submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum);
         return price;
     }
 
@@ -107,9 +101,10 @@ contract BinanceOracle is SuaveContract {
         string memory ticker,
         uint price, 
         uint nonce,
+        uint gasPrice,
         uint64 settlementBlockNum
     ) internal view {
-        bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce);
+        bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce, gasPrice);
         sendBundle(signedTx, settlementBlockNum);
         // sendRawTx(signedTx);
     }
@@ -132,10 +127,10 @@ contract BinanceOracle is SuaveContract {
         txSigned = Suave.signEthTransaction(txRlp, GOERLI_CHAINID_STR, pk);
     }
 
-    function createPriceUpdateTx(string memory ticker, uint price, uint nonce) internal view returns (bytes memory txSigned)  {
+    function createPriceUpdateTx(string memory ticker, uint price, uint nonce, uint gasPrice) internal view returns (bytes memory txSigned)  {
         Transactions.EIP155 memory transaction = Transactions.EIP155({
             nonce: nonce,
-            gasPrice: 100 gwei,
+            gasPrice: gasPrice,
             gas: 100_000,
             to: settlementContract,
             value: 0,
