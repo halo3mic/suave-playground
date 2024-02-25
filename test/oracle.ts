@@ -66,7 +66,7 @@ describe('oracle', async () => {
         console.log(res.confidentialComputeResult)
     })
 
-    it('queryAndSubmit', async () => {
+    it.only('queryAndSubmit', async () => {
         const ticker = 'ETHUSDT'
         const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
         const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
@@ -116,7 +116,8 @@ describe('oracle', async () => {
         }
 
         // Submit oracle updates for the next N blocks
-        let controllerNonce = 1
+        const controllerNonce = 1
+        const gasPrice = '0x174876e800'
         for (let i=0; i<100; i++) {
             const nextGoerliBlock = (await goerliProvider.getBlockNumber()) + 1
             console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
@@ -131,6 +132,7 @@ describe('oracle', async () => {
                 const submissionRes = await OracleContract.queryAndSubmit.sendConfidentialRequest(
                     ticker,
                     controllerNonce,
+                    gasPrice,
                     nextGoerliBlock
                 )
                 const receipt = await submissionRes.wait()
