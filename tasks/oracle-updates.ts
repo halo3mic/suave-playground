@@ -27,8 +27,15 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 
 async function submitOracleUpdates(c: ITaskConfig) {
 	const controllerAddress = await c.oracleContract.controller()
+	let lastGoerliBlock = 0
 	for (let i=0; i<c.nblocks; i++) {
-		const nextGoerliBlock = (await c.goerliSigner.provider.getBlockNumber()) + 1
+		const goerliBlockNum = await c.goerliSigner.provider.getBlockNumber()
+		if (goerliBlockNum <= lastGoerliBlock) {
+			await utils.sleep(2000)
+			continue
+		}
+		lastGoerliBlock = goerliBlockNum
+		const nextGoerliBlock = goerliBlockNum + 1
 		console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
 		await submitOracleUpdate(c, controllerAddress, nextGoerliBlock)
 	}
