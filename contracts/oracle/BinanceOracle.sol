@@ -18,7 +18,7 @@ contract BinanceOracle is SuaveContract {
     string public constant GOERLI_CHAINID_STR = "0x5";
     uint8 public constant DECIMALS = 4;
     string public constant S_NAMESPACE = "oracle:v0:pksecret";
-    string public constant INFURA_GOERLI_RPC = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"; // Change when settlement node API is exposed
+    string public constant INFURA_GOERLI_RPC = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
     string public constant URL_PARTIAL = "https://data-api.binance.vision/api/v3/ticker/price?symbol=";
     string public constant GOERLI_BUNDLE_ENDPOINT = "https://relay-goerli.flashbots.net";
     
@@ -71,7 +71,9 @@ contract BinanceOracle is SuaveContract {
         );
     }
 
-    function registerSettlementContract(address _settlementContract) external view onlyConfidential() returns (bytes memory) {
+    function registerSettlementContract(
+        address _settlementContract
+    ) external view onlyConfidential() returns (bytes memory) {
         require(settlementContract == address(0), "Already registered");
         bytes memory signedTx = createRegisterTx(_settlementContract);
         sendRawTx(signedTx);
@@ -93,6 +95,7 @@ contract BinanceOracle is SuaveContract {
     function queryLatestPrice(string memory ticker) public view returns (uint price) {
         bytes memory response = doBinanceQuery(ticker);
         JSONParserLib.Item memory parsedRes = string(response).parse();
+        // solhint-disable-next-line
         string memory priceStr = string(parsedRes.at('"price"').value());
         price = floatToInt(trimStrEdges(priceStr), DECIMALS);
     }
@@ -131,7 +134,12 @@ contract BinanceOracle is SuaveContract {
         txSigned = Suave.signEthTransaction(txRlp, GOERLI_CHAINID_STR, pk);
     }
 
-    function createPriceUpdateTx(string memory ticker, uint price, uint nonce, uint gasPrice) internal view returns (bytes memory txSigned)  {
+    function createPriceUpdateTx(
+        string memory ticker, 
+        uint price, 
+        uint nonce, 
+        uint gasPrice
+    ) internal view returns (bytes memory txSigned)  {
         Transactions.EIP155 memory transaction = Transactions.EIP155({
             nonce: nonce,
             gasPrice: gasPrice,
@@ -150,8 +158,13 @@ contract BinanceOracle is SuaveContract {
     }
 
     function sendRawTx(bytes memory txSigned) public view returns (bytes memory) {
-        bytes memory body =
-            abi.encodePacked('{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["', LibString.toHexString(txSigned), '"],"id":1}');
+        /* solhint-disable */
+        bytes memory body = abi.encodePacked(
+            '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["', 
+            LibString.toHexString(txSigned), 
+            '"],"id":1}'
+        );
+        /* solhint-enable */
         Suave.HttpRequest memory request;
         request.method = "POST";
         request.body = body;
@@ -168,6 +181,7 @@ contract BinanceOracle is SuaveContract {
     }
 
     function simulateTx(bytes memory signedTx) internal view {
+        // solhint-disable-next-line
         bytes memory bundle = abi.encodePacked('{"txs": ["', LibString.toHexString(signedTx), '"]}');
         (bool successSim, bytes memory data) = Suave.SIMULATE_BUNDLE.staticcall(abi.encode(bundle));
         crequire(successSim,  string(abi.encodePacked("BundleSimulationFailed: ", string(data))));
@@ -178,7 +192,7 @@ contract BinanceOracle is SuaveContract {
         headers[0] = "Content-Type: application/json";
         Suave.HttpRequest memory request = Suave.HttpRequest({
             url: string(abi.encodePacked(URL_PARTIAL, ticker)),
-            method: 'GET',
+            method: "GET",
             headers: headers,
             body: new bytes(0),
             withFlashbotsSignature: false
@@ -205,9 +219,10 @@ contract BinanceOracle is SuaveContract {
     }
 
     function bundleRequestParams(bytes[] memory txns, uint blockNumber) internal pure returns (bytes memory) {
-        bytes memory params =
-            abi.encodePacked('{"blockNumber": "', LibString.toHexString(blockNumber), '", "txs": [');
+        // solhint-disable-next-line
+        bytes memory params = abi.encodePacked('{"blockNumber": "', LibString.toHexString(blockNumber), '", "txs": [');
         for (uint256 i = 0; i < txns.length; i++) {
+            // solhint-disable-next-line
             params = abi.encodePacked(params, '"', LibString.toHexString(txns[i]), '"');
             if (i < txns.length - 1) {
                 params = abi.encodePacked(params, ",");
