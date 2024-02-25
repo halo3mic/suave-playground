@@ -132,7 +132,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "beaconRoot",
+            "name": "parentBeaconBlockRoot",
             "type": "bytes32"
           },
           {
@@ -245,7 +245,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "beaconRoot",
+            "name": "parentBeaconBlockRoot",
             "type": "bytes32"
           },
           {
@@ -348,7 +348,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "beaconRoot",
+            "name": "parentBeaconBlockRoot",
             "type": "bytes32"
           },
           {
@@ -451,7 +451,7 @@
           },
           {
             "internalType": "bytes32",
-            "name": "beaconRoot",
+            "name": "parentBeaconBlockRoot",
             "type": "bytes32"
           },
           {
