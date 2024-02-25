@@ -21,7 +21,7 @@ library Suave {
         bytes32 random;
         Withdrawal[] withdrawals;
         bytes extra;
-        bytes32 beaconRoot;
+        bytes32 parentBeaconBlockRoot;
         bool fillPending;
     }
 
