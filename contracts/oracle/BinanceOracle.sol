@@ -79,15 +79,15 @@ contract BinanceOracle is SuaveContract {
     }
 
     function queryAndSubmit(
-        string memory ticker, 
+        string memory ticker,
         uint nonce,
         uint gasPrice,
         uint64 settlementBlockNum,
         bool privateSubmission
-    ) external view onlyConfidential returns (uint) {
+    ) external view onlyConfidential returns (bytes memory) {
         uint price = queryLatestPrice(ticker);
         submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum, privateSubmission);
-        return price;
+        return abi.encodeWithSelector(this.queryAndSubmitCallback.selector, ticker, price);
     }
 
     function queryLatestPrice(string memory ticker) public view returns (uint price) {
