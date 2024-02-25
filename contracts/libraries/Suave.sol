@@ -4,6 +4,11 @@ pragma solidity ^0.8.8;
 library Suave {
     error PeekerReverted(address, bytes);
 
+    enum CryptoSignature {
+        SECP256,
+        BLS
+    }
+
     type DataId is bytes16;
 
     struct BuildBlockArgs {
@@ -220,8 +225,8 @@ library Suave {
         return abi.decode(data, (DataRecord));
     }
 
-    function privateKeyGen() internal view returns (string memory) {
-        (bool success, bytes memory data) = PRIVATE_KEY_GEN.staticcall(abi.encode());
+    function privateKeyGen(CryptoSignature crypto) internal view returns (string memory) {
+        (bool success, bytes memory data) = PRIVATE_KEY_GEN.staticcall(abi.encode(crypto));
         if (!success) {
             revert PeekerReverted(PRIVATE_KEY_GEN, data);
         }
@@ -242,9 +247,13 @@ library Suave {
         return abi.decode(data, (bytes));
     }
 
-    function signMessage(bytes memory digest, string memory signingKey) internal view returns (bytes memory) {
+    function signMessage(bytes memory digest, CryptoSignature crypto, string memory signingKey)
+        internal
+        view
+        returns (bytes memory)
+    {
         require(isConfidential());
-        (bool success, bytes memory data) = SIGN_MESSAGE.staticcall(abi.encode(digest, signingKey));
+        (bool success, bytes memory data) = SIGN_MESSAGE.staticcall(abi.encode(digest, crypto, signingKey));
         if (!success) {
             revert PeekerReverted(SIGN_MESSAGE, data);
         }

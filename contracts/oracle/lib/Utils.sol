@@ -63,7 +63,7 @@ function trimStrEdges(string memory _input) pure returns (string memory) {
 
 function getAddressForPk(string memory pk) view returns (address) {
     bytes32 digest = keccak256(abi.encode("yo"));
-    bytes memory sig = Suave.signMessage(abi.encodePacked(digest), pk);
+    bytes memory sig = Suave.signMessage(abi.encodePacked(digest), Suave.CryptoSignature.SECP256, pk);
     return recoverSigner(digest, sig);
 }
 

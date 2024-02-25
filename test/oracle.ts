@@ -66,7 +66,7 @@ describe('oracle', async () => {
         console.log(res.confidentialComputeResult)
     })
 
-    it.only('queryAndSubmit', async () => {
+    it('queryAndSubmit', async () => {
         const ticker = 'ETHUSDT'
         const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
         const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
@@ -121,7 +121,6 @@ describe('oracle', async () => {
         for (let i=0; i<100; i++) {
             const nextGoerliBlock = (await goerliProvider.getBlockNumber()) + 1
             console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
-            // Obtain the present nonce on the settlement layer
             const newControllerNonce = await goerliProvider.getTransactionCount(controllerAddress)
             // Exit if the settlement tx landed (signer's nonce changed)
             if (newControllerNonce == 2) {

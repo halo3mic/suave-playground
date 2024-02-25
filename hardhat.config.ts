@@ -7,6 +7,7 @@ import 'hardhat-tracer'
 import 'hardhat-deploy'
 
 import { getEnvValSafe } from './src/utils'
+import './tasks/oracle-updates'
 import './tasks/build-blocks'
 import './tasks/mevshare'
 import './tasks/adblock'
@@ -30,21 +31,27 @@ export default {
 		}
 	},
 	networks: {
+		goerli: {
+			chainId: 5,
+			url: GOERLI_RPC,
+			accounts: [ GOERLI_PK ],
+		}, 
 		suave: {
 			chainId: 424242,
 			gasPrice: 0,
 			url: SUAVE_RPC,
-			accounts: [ SUAVE_PK ]
+			accounts: [ SUAVE_PK ],
+			companionNetworks: {
+				goerli: 'goerli',
+			},
 		},
-		goerli: {
-			chainId: 5,
-			url: GOERLI_RPC,
-			accounts: [ GOERLI_PK ]
-		}, 
 		rigil: {
 			chainId: 16813125,
 			url: RIGIL_RPC,
-			accounts: [ RIGIL_PK ]
+			accounts: [ RIGIL_PK ],
+			companionNetworks: {
+				goerli: 'goerli',
+			},
 		}
 	}
 }

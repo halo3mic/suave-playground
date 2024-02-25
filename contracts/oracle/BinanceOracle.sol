@@ -61,7 +61,7 @@ contract BinanceOracle is SuaveContract {
     function confidentialConstructor() external view onlyConfidential returns (bytes memory) {
         crequire(!isInitialized, "Already initialized");
 
-        string memory pk = Suave.privateKeyGen();
+        string memory pk = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
         address pkAddress = getAddressForPk(pk);
 		Suave.DataId bidId = storePK(bytes(pk));
 
@@ -105,8 +105,8 @@ contract BinanceOracle is SuaveContract {
         uint64 settlementBlockNum
     ) internal view {
         bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce, gasPrice);
-        sendBundle(signedTx, settlementBlockNum);
-        // sendRawTx(signedTx);
+        // sendBundle(signedTx, settlementBlockNum);
+        sendRawTx(signedTx);
     }
 
     function createRegisterTx(address _settlementContract) internal view returns (bytes memory txSigned) {
