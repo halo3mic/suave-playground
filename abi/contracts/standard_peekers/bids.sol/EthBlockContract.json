@@ -131,6 +131,11 @@
             "type": "bytes"
           },
           {
+            "internalType": "bytes32",
+            "name": "parentBeaconBlockRoot",
+            "type": "bytes32"
+          },
+          {
             "internalType": "bool",
             "name": "fillPending",
             "type": "bool"
@@ -239,6 +244,11 @@
             "type": "bytes"
           },
           {
+            "internalType": "bytes32",
+            "name": "parentBeaconBlockRoot",
+            "type": "bytes32"
+          },
+          {
             "internalType": "bool",
             "name": "fillPending",
             "type": "bool"
@@ -337,6 +347,11 @@
             "type": "bytes"
           },
           {
+            "internalType": "bytes32",
+            "name": "parentBeaconBlockRoot",
+            "type": "bytes32"
+          },
+          {
             "internalType": "bool",
             "name": "fillPending",
             "type": "bool"
@@ -433,6 +448,11 @@
             "internalType": "bytes",
             "name": "extra",
             "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "parentBeaconBlockRoot",
+            "type": "bytes32"
           },
           {
             "internalType": "bool",

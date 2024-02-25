@@ -14,6 +14,7 @@ export interface PayloadAttributes {
 	prev_randao: string;
 	suggested_fee_recipient: string;
 	withdrawals: Withdrawal[];
+	parent_beacon_block_root: string;
 }
   
 export interface BeaconEventData {
@@ -95,7 +96,8 @@ export class BeaconPAListener {
 						validator_index: Number(w.validator_index),
 						address: w.address,
 						amount: Number(w.amount)
-					}))
+					})),
+					parent_beacon_block_root: parsed.data.payload_attributes.parent_beacon_block_root
 				}
 			}
 		}
