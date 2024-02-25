@@ -4,17 +4,32 @@ export interface DeployOptions {
     contractName: string,
     args: Array<any>,
     tags: Array<string>,
-    optionalArgs?: Map<string, any>
+    optionalArgs?: Record<string, any>
 }
 
-export function makeDeployCallback(deployOptions: DeployOptions): any {
-	const exportEnv = _makeDeployCallback(deployOptions)
+export function makeDeployCallback(
+	deployOptions: DeployOptions, 
+	preDeployCallback?: any,
+	postDeployCallback?: any
+): any {
+	const exportEnv = _makeDeployCallback(
+		deployOptions,
+		preDeployCallback,
+		postDeployCallback
+	)
 	exportEnv.tags = deployOptions.tags
 	return exportEnv
 }
 
-function _makeDeployCallback(deployOptions: DeployOptions): any {
+function _makeDeployCallback(
+	deployOptions: DeployOptions, 
+	preDeployCallback?: any,
+	postDeployCallback?: any
+): any {
 	return async ({ getNamedAccounts, deployments }) => {
+		if (preDeployCallback)
+			await preDeployCallback(deployments)
+
 		const { deploy, log } = deployments
 		const { deployer } = await getNamedAccounts()
 
@@ -24,7 +39,7 @@ function _makeDeployCallback(deployOptions: DeployOptions): any {
 			contract: deployOptions.contractName,
 			args: deployOptions.args,
 			gas: 1.5e5,
-			skipIfAlreadyDeployed: false, 
+			skipIfAlreadyDeployed: false,
 			...deployOptions.optionalArgs
 		})
 
@@ -33,5 +48,7 @@ function _makeDeployCallback(deployOptions: DeployOptions): any {
 		} else {
 			log(`- Deployment skipped, using previous deployment at: ${deployResult.address}`)
 		}
+		if (postDeployCallback)
+			await postDeployCallback(deployments, deployResult)
 	}
 }
