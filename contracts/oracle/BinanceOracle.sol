@@ -42,7 +42,7 @@ contract BinanceOracle is SuaveContract {
     }
 
     function registerCallback(address _settlementContract) public {
-        require(_settlementContract == settlementContract || settlementContract == address(0), "Already registered");
+        require(settlementContract == address(0), "Already registered");
         settlementContract = _settlementContract;
     }
 
@@ -74,7 +74,8 @@ contract BinanceOracle is SuaveContract {
     function registerSettlementContract(
         address _settlementContract
     ) external view onlyConfidential() returns (bytes memory) {
-        require(settlementContract == address(0), "Already registered");
+        // Allow multiple registrations for the same address (consider the intial tx is not commited to the chain)
+        require(_settlementContract == settlementContract || settlementContract == address(0), "Already registered");
         bytes memory signedTx = createRegisterTx(_settlementContract);
         sendRawTx(signedTx);
         return abi.encodeWithSelector(this.registerCallback.selector, _settlementContract);
