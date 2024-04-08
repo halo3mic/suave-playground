@@ -17,7 +17,7 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending oracle updates for the next ${config.nblocks} blocks`)
-		console.log(`Goerli signer: ${config.goerliSigner.address}`)
+		console.log(`Holesky signer: ${config.holeskySigner.address}`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		console.log(`Ticker: ${config.ticker}`)
 
@@ -27,29 +27,29 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 
 async function submitOracleUpdates(c: ITaskConfig) {
 	const controllerAddress = await c.oracleContract.controller()
-	let lastGoerliBlock = 0
+	let lastHoleskyBlock = 0
 	for (let i=0; i<c.nblocks; i++) {
-		const goerliBlockNum = await c.goerliSigner.provider.getBlockNumber()
-		if (goerliBlockNum <= lastGoerliBlock) {
+		const holeskyBlockNum = await c.holeskySigner.provider.getBlockNumber()
+		if (holeskyBlockNum <= lastHoleskyBlock) {
 			await utils.sleep(2000)
 			continue
 		}
-		lastGoerliBlock = goerliBlockNum
-		const nextGoerliBlock = goerliBlockNum + 1
-		console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
-		await submitOracleUpdate(c, controllerAddress, nextGoerliBlock)
+		lastHoleskyBlock = holeskyBlockNum
+		const nextHoleskyBlock = holeskyBlockNum + 1
+		console.log(`${i} | Submitting for Holesky block: ${nextHoleskyBlock}`)
+		await submitOracleUpdate(c, controllerAddress, nextHoleskyBlock)
 	}
 }
 
-async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nextGoerliBlock: number) {
+async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nextHoleskyBlock: number) {
 	try {
-		const gasPrice = await c.goerliSigner.provider.getGasPrice().then(p => p.toHexString())
-		const nonce = await c.goerliSigner.provider.getTransactionCount(controllerAddress)
+		const gasPrice = await c.holeskySigner.provider.getGasPrice().then(p => p.toHexString())
+		const nonce = await c.holeskySigner.provider.getTransactionCount(controllerAddress)
 		const submissionRes = await c.oracleContract.queryAndSubmit.sendConfidentialRequest(
 			c.ticker,
 			nonce,
 			gasPrice,
-			nextGoerliBlock,
+			nextHoleskyBlock,
 			c.privateSubmission
 		)
 		const receipt = await submissionRes.wait()
@@ -64,7 +64,7 @@ async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nex
 interface ITaskConfig {
 	nblocks: number,
 	executionNodeAdd: string,
-	goerliSigner: Wallet,
+	holeskySigner: Wallet,
 	suaveSigner: SuaveWallet,
 	oracleContract: SuaveContract,
 	ticker: string,
@@ -74,7 +74,7 @@ interface ITaskConfig {
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const { nblocks, ticker, oracleContract: oc, privateSubmission } = await parseTaskArgs(hre, taskArgs)
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const goerliSigner = utils.makeGoerliSigner()
+	const holeskySigner = utils.makeHoleskySigner()
 
 	const networkConfig: any = hre.network.config
 	const suaveProvider = new SuaveProvider(networkConfig.url, executionNodeAdd)
@@ -89,7 +89,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 		nblocks,
 		ticker,
 		executionNodeAdd,
-		goerliSigner,
+		holeskySigner,
 		suaveSigner,
 		oracleContract,
 		privateSubmission

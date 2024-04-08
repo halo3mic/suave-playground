@@ -5,7 +5,7 @@ import { getEnvValSafe } from '../../src/utils'
 const deployOptions: DeployOptions = {
 	name: 'BlockAdAuctionV2', 
 	contractName: 'BlockAdAuctionV2', 
-	args: [ getEnvValSafe('GOERLI_RELAY') ], 
+	args: [ getEnvValSafe('HOLESKY_RELAY') ], 
 	tags: [ 'blockad' ]
 }
 

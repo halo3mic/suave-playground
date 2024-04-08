@@ -15,17 +15,17 @@ $ yarn install
 Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the following fields:
 * `SUAVE_PK`: Private key for the account interacting with your local Suave chain.
 * `RIGIL_PK`: Private key for the account interacting with Suave chain on Rigil.
-* `GOERLI_PK`: Private key for the account interacting with Goerli chain.
+* `HOLESKY_PK`: Private key for the account interacting with Holesky chain.
 * `EXECUTION_NODE`: Address of the account associated with your Suave execution client. Use the account generated during Suave setup.
 * `SUAVE_RPC`: RPC endpoint of your Suave execution client. Use the port you specified during Suave setup.
 * `RIGIL_RPC`: RPC endpoint of fb Rigil Suave execution client.
-* `GOERLI_RPC`: RPC endpoint of your Goerli client. Use the port you specified during Goerli setup.
+* `HOLESKY_RPC`: RPC endpoint of your Holesky client. Use the port you specified during Holesky setup.
 
 ## Deploy contracts
 
-### Goerli settlement contract
+### Holesky settlement contract
 ```bash
-$ npx hardhat deploy --tags oracle-settlement --network goerli
+$ npx hardhat deploy --tags oracle-settlement --network holesky
 ```
 
 ### Oracle contract

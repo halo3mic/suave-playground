@@ -26,7 +26,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
-		console.log(`Goerli signer: ${config.goerliSigner.address}`)
+		console.log(`Holesky signer: ${config.holeskySigner.address}`)
 		
 		await cInitIfNeeded(config)
 		if (taskArgs.build) {
@@ -73,11 +73,18 @@ async function submitAndBuild(c: ITaskConfig) {
 async function submitAdBid(c: ITaskConfig): Promise<boolean> {
 	checkExtraIsValid(c.extra)
 	process.stdout.write('📢 Submitting ad ... ')
-	const blockNum = await c.goerliSigner.provider.getBlockNumber()
+	const blockNum = await c.holeskySigner.provider.getBlockNumber()
 	const bidAmount = ethers.utils.parseEther(c.adBid.toString())
+	console.log(c.suaveSigner,
+		c.holeskySigner,
+		c.executionNodeAdd, 
+		c.adauctionAdd,
+		blockNum + c.blockrange,
+		c.extra,
+		bidAmount)
 	const [s, e] = await sendAdForBlock(
 		c.suaveSigner,
-		c.goerliSigner,
+		c.holeskySigner,
 		c.executionNodeAdd, 
 		c.adauctionAdd,
 		blockNum + c.blockrange,
@@ -97,7 +104,7 @@ async function submitAdBid(c: ITaskConfig): Promise<boolean> {
 
 async function sendAdForBlock(
 	suaveSigner: Wallet,
-	goerliSigner: Wallet,
+	holeskySigner: Wallet,
 	executionNodeAdd: string,
 	adbuilderAdd: string, 
 	blockLimit: number, 
@@ -111,7 +118,7 @@ async function sendAdForBlock(
 		executionNodeAdd, 
 		adbuilderAdd,
 	)
-	const confidentialBytes = await utils.makePaymentBundleBytes(goerliSigner, bidAmount)
+	const confidentialBytes = await utils.makePaymentBundleBytes(holeskySigner, bidAmount)
 	const inputBytes = new ConfidentialComputeRequest(confidentialRec, confidentialBytes)
 		.signWithWallet(suaveSigner)
 		.rlpEncode()
@@ -163,7 +170,7 @@ function checkExtraIsValid(extra: string) {
 interface ITaskConfig {
 	executionNodeAdd: string,
 	suaveSigner: Wallet,
-	goerliSigner: Wallet,
+	holeskySigner: Wallet,
 	extra: string,
 	adBid: number,
 	adauctionAdd: string,
@@ -183,10 +190,10 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 export function getEnvConfig(useTestnet: boolean = false) {
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
 	const suaveSigner = utils.makeSuaveSigner(useTestnet)
-	const goerliSigner = utils.makeGoerliSigner()
+	const holeskySigner = utils.makeHoleskySigner()
 	return {
 		executionNodeAdd,
-		goerliSigner,
+		holeskySigner,
 		suaveSigner,
 	}
 }

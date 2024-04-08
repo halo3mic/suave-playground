@@ -6,10 +6,10 @@ import * as utils from '../tasks/utils'
 
 describe('oracle', async () => {
 	const executionNodeUrl = utils.getEnvValSafe('SUAVE_RPC')
-	const goerliUrl = utils.getEnvValSafe('GOERLI_RPC')
+	const holeskyUrl = utils.getEnvValSafe('HOLESKY_RPC')
 	const executionNodeAddress = utils.getEnvValSafe('EXECUTION_NODE')
 	const suaveChainPK = utils.getEnvValSafe('SUAVE_PK')
-	const goerliPK = utils.getEnvValSafe('GOERLI_PK')
+	const holeskyPK = utils.getEnvValSafe('HOLESKY_PK')
 	let OracleContract
 
 	before(async () => {
@@ -53,14 +53,14 @@ describe('oracle', async () => {
 	})
 
 	it('sendRawTransaction', async () => {
-		const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
-		const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
-		const signedTx = await goerliSigner.signTransaction({
-			to: goerliSigner.address,
+		const holeskyProvider = new ethers.providers.JsonRpcProvider(holeskyUrl)
+		const holeskySigner = new ethers.Wallet(holeskyPK, holeskyProvider)
+		const signedTx = await holeskySigner.signTransaction({
+			to: holeskySigner.address,
 			data: ethers.utils.toUtf8Bytes('hello'),
 			gasLimit: 60000,
 			gasPrice: ethers.utils.parseUnits('80', 'gwei'),
-			nonce: await goerliSigner.getTransactionCount()
+			nonce: await holeskySigner.getTransactionCount()
 		})
 		const res = await OracleContract.sendRawTx.sendConfidentialRequest(signedTx)
 		console.log(res.confidentialComputeResult)
@@ -69,13 +69,13 @@ describe('oracle', async () => {
 	it('queryAndSubmit', async () => {
 		const ticker = 'ETHUSDT'
 		const privateSubmission = true
-		const goerliProvider = new ethers.providers.JsonRpcProvider(goerliUrl)
-		const goerliSigner = new ethers.Wallet(goerliPK, goerliProvider)
+		const holeskyProvider = new ethers.providers.JsonRpcProvider(holeskyUrl)
+		const holeskySigner = new ethers.Wallet(holeskyPK, holeskyProvider)
         
 		// Deploy oracle settlement contract
 		const settlementContract = await ethers.getContractFactory('OracleSettlementContract')
 			.then(async (factory) => {
-				const contract = await factory.connect(goerliSigner).deploy()
+				const contract = await factory.connect(holeskySigner).deploy()
 				const r = await contract.deployTransaction.wait()
 				expect(r.status).to.equal(1)
 				return contract
@@ -95,7 +95,7 @@ describe('oracle', async () => {
 		const controllerAddress = await OracleContract.controller()
 
 		// Send gas to the controller
-		const payReceipt = await goerliSigner.sendTransaction({
+		const payReceipt = await holeskySigner.sendTransaction({
 			to: controllerAddress,
 			value: ethers.utils.parseEther('0.02')
 		}).then(tx => tx.wait())
@@ -109,7 +109,7 @@ describe('oracle', async () => {
 			throw new Error('ConfidentialInit callback failed')
 		// eslint-disable-next-line no-constant-condition
 		while (true) { 
-			const nonce = await goerliProvider.getTransactionCount(controllerAddress)
+			const nonce = await holeskyProvider.getTransactionCount(controllerAddress)
 			if (nonce == 1) {
 				break
 			}
@@ -120,9 +120,9 @@ describe('oracle', async () => {
 		const controllerNonce = 1
 		const gasPrice = '0x174876e800'
 		for (let i=0; i<100; i++) {
-			const nextGoerliBlock = (await goerliProvider.getBlockNumber()) + 1
-			console.log(`${i} | Submitting for Goerli block: ${nextGoerliBlock}`)
-			const newControllerNonce = await goerliProvider.getTransactionCount(controllerAddress)
+			const nextHoleskyBlock = (await holeskyProvider.getBlockNumber()) + 1
+			console.log(`${i} | Submitting for Holesky block: ${nextHoleskyBlock}`)
+			const newControllerNonce = await holeskyProvider.getTransactionCount(controllerAddress)
 			// Exit if the settlement tx landed (signer's nonce changed)
 			if (newControllerNonce == 2) {
 				return
@@ -133,7 +133,7 @@ describe('oracle', async () => {
 					ticker,
 					controllerNonce,
 					gasPrice,
-					nextGoerliBlock, 
+					nextHoleskyBlock, 
 					privateSubmission
 				)
 				const receipt = await submissionRes.wait()

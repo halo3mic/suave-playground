@@ -1,14 +1,22 @@
 [
   {
+    "anonymous": false,
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_controller",
-        "type": "address"
+        "indexed": false,
+        "internalType": "string",
+        "name": "ticker",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "name": "PriceUpdated",
+    "type": "event"
   },
   {
     "inputs": [],
@@ -27,15 +35,20 @@
     "inputs": [
       {
         "internalType": "string",
-        "name": "ticker",
+        "name": "",
         "type": "string"
       }
     ],
-    "name": "getPrice",
+    "name": "latestPriceUpdate",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "blockNumber",
         "type": "uint256"
       }
     ],
@@ -43,33 +56,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "name": "latestPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newController",
-        "type": "address"
-      }
-    ],
-    "name": "setController",
+    "inputs": [],
+    "name": "register",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

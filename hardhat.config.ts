@@ -15,10 +15,10 @@ import './tasks/adblock'
 
 dconfig()
 const SUAVE_PK = getEnvValSafe('SUAVE_PK')
-const GOERLI_PK = getEnvValSafe('GOERLI_PK')
+const HOLESKY_PK = getEnvValSafe('HOLESKY_PK')
 const RIGIL_PK = getEnvValSafe('RIGIL_PK')
 const SUAVE_RPC = getEnvValSafe('SUAVE_RPC')
-const GOERLI_RPC = getEnvValSafe('GOERLI_RPC')
+const HOLESKY_RPC = getEnvValSafe('HOLESKY_RPC')
 const RIGIL_RPC = getEnvValSafe('RIGIL_RPC')
 
 
@@ -31,10 +31,10 @@ export default {
 		}
 	},
 	networks: {
-		goerli: {
-			chainId: 5,
-			url: GOERLI_RPC,
-			accounts: [ GOERLI_PK ],
+		holesky: {
+			chainId: 17000,
+			url: HOLESKY_RPC, // todo move to holesky
+			accounts: [ HOLESKY_PK ],
 		}, 
 		suave: {
 			chainId: 424242,
@@ -42,7 +42,7 @@ export default {
 			url: SUAVE_RPC,
 			accounts: [ SUAVE_PK ],
 			companionNetworks: {
-				goerli: 'goerli',
+				holesky: 'holesky',
 			},
 		},
 		rigil: {
@@ -50,7 +50,7 @@ export default {
 			url: RIGIL_RPC,
 			accounts: [ RIGIL_PK ],
 			companionNetworks: {
-				goerli: 'goerli',
+				holesky: 'holesky',
 			},
 		}
 	}

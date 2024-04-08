@@ -1,15 +1,15 @@
 # 🚧 Suave POC Playground 🏗️
 
-Welcome to the Suave POC Playground! This repository serves as a guide for setting up a local environment to build and submit Goerli blocks to Flashbots's relay using Suave. It's designed based on my personal successful configurations and is meant to be an aid rather than an official guideline.
+Welcome to the Suave POC Playground! This repository serves as a guide for setting up a local environment to build and submit Holesky blocks to Flashbots's relay using Suave. It's designed based on my personal successful configurations and is meant to be an aid rather than an official guideline.
 
 Please note that Suave is an actively developed project, and with new updates, this repository might become outdated. Always refer to the official Suave-Geth repository for the latest changes.
 
 ## Prerequisites
-Have the latest Golang, Git and NodeJS installed. Unless you have Goerli execution and beacon node at hand you will need ~400GB of disk space.
+Have the latest Golang, Git and NodeJS installed. Unless you have Holesky execution and beacon node at hand you will need ~400GB of disk space.
 
-## Setup Goerli 🧪
-Run Goerli network with Suave-Geth. It will run as vanilla Geth with extra methods 
-`suavex_buildEthBlockFromBundles` and `suavex_buildEthBlock` which are essential for Suave block building. One can run vanilla Geth, but will need to implement the mentioned methods themself. If you have Goerli already synced just point Suave-Geth to existing db.
+## Setup Holesky 🧪
+Run Holesky network with Suave-Geth. It will run as vanilla Geth with extra methods 
+`suavex_buildEthBlockFromBundles` and `suavex_buildEthBlock` which are essential for Suave block building. One can run vanilla Geth, but will need to implement the mentioned methods themself. If you have Holesky already synced just point Suave-Geth to existing db.
 
 #### Clone and build Suave-Geth
 
@@ -18,10 +18,10 @@ $ git clone https://github.com/flashbots/suave-geth
 $ cd ./suave-geth
 $ make geth
 ```
-#### Run Goerli
+#### Run Holesky
 
 ```bash
-$ ./build/bin/geth --goerli --syncmode=snap --datadir $GOERLI_DATADIR --http --http --http.api eth,net,engine,admin,suavex --http.addr 127.0.0.1 --http.port $GOERLI_RPC_PORT
+$ ./build/bin/geth --holesky --syncmode=snap --datadir $HOLESKY_DATADIR --http --http --http.api eth,net,engine,admin,suavex --http.addr 127.0.0.1 --http.port $HOLESKY_RPC_PORT
 ```
  
 ## Setup Beacon Node 📡
@@ -80,14 +80,14 @@ $ ./build/bin/geth init ./genesis.json --datadir $SUAVE_DATADIR
 
 #### Run Suave execution node
 ```bash
-$ ./build/bin/geth --dev --dev.gaslimit 30000000 --datadir $SUAVE_DATADIR --http --http.addr "127.0.0.1" --http.api "eth,web3,net,clique" --allow-insecure-unlock --unlock $SEALER_ADDRESS --password ./password --ws --suave.eth.remote_endpoint "http://localhost:$GOERLI_RPC_PORT" --miner.gasprice 0
+$ ./build/bin/geth --dev --dev.gaslimit 30000000 --datadir $SUAVE_DATADIR --http --http.addr "127.0.0.1" --http.api "eth,web3,net,clique" --allow-insecure-unlock --unlock $SEALER_ADDRESS --password ./password --ws --suave.eth.remote_endpoint "http://localhost:$HOLESKY_RPC_PORT" --miner.gasprice 0
 ```
 
 ## Build a block via Suave-playground 👷‍♂️
 
-### Fill account with Goerli ETH
-You will need Goerli account with GETH to pay for gas fees. 
-There are numerous ways to do this, one is via this [POW faucet](https://goerli-faucet.pk910.de/).
+### Fill account with Holesky ETH
+You will need Holesky account with GETH to pay for gas fees. 
+There are numerous ways to do this, one is via this [POW faucet](https://holesky-faucet.pk910.de/).
 
 
 #### Setup Suave-Playground
@@ -101,12 +101,12 @@ $ yarn install
 
 Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the following fields:
 * `SUAVE_PK`: Private key for the account interacting with Suave chain
-* `GOERLI_PK`: Private key for the account interacting with Goerli chain
+* `HOLESKY_PK`: Private key for the account interacting with Holesky chain
 * `EXECUTION_NODE`: Address of the account associated with your Suave execution client. Use the account generated during Suave setup.
 * `SUAVE_RPC`: RPC endpoint of your Suave execution client. Use the port you specified during Suave setup.
-* `GOERLI_RPC`: RPC endpoint of your Goerli client. Use the port you specified during Goerli setup.
+* `HOLESKY_RPC`: RPC endpoint of your Holesky client. Use the port you specified during Holesky setup.
 * `BEACON_NODE`: RPC endpoint of your beacon node. Use the port you specified during beacon node setup.
-* `GOERLI_RELAY`: RPC endpoint of the Goerli relay. Use `https://relay-goerli.flashbots.net`.
+* `HOLESKY_RELAY`: RPC endpoint of the Holesky relay. Use `https://relay-holesky.flashbots.net`.
 
 #### Deploy Builder and MevShare contracts
 ```

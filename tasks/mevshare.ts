@@ -25,7 +25,7 @@ task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending bundles for the next ${config.nslots} blocks`)
-		console.log(`Goerli signer: ${config.goerliSigner.address}`)
+		console.log(`Holesky signer: ${config.holeskySigner.address}`)
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 
 		if (taskArgs.build) {
@@ -38,10 +38,10 @@ task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
 	
 
 async function sendMevShareBundles(c: ITaskConfig) {	
-	const startGoerliBlock = await c.goerliSigner.provider.getBlockNumber()
-	console.log('startingGoerliBlockNum', startGoerliBlock)
+	const startHoleskyBlock = await c.holeskySigner.provider.getBlockNumber()
+	console.log('startingHoleskyBlockNum', startHoleskyBlock)
 	for (let i=2; i < c.nslots + 1; i++) {
-		await submitMevShareBid(c, startGoerliBlock)
+		await submitMevShareBid(c, startHoleskyBlock)
 	}
 }
 
@@ -59,11 +59,11 @@ async function submitAndBuild(c: ITaskConfig) {
 
 export async function submitMevShareBid(c: ITaskConfig, blockNum?: number): Promise<boolean> {
 	if (!blockNum) {
-		blockNum = await c.goerliSigner.provider.getBlockNumber() + 1
+		blockNum = await c.holeskySigner.provider.getBlockNumber() + 1
 	}
 	process.stdout.write('🦋 Submitting MevShare bundle ...')
 	const txReward = ethers.utils.parseEther('0.1') // todo: make this a param
-	const confidentialDataBytes = await utils.makePaymentBundleBytes(c.goerliSigner, txReward)
+	const confidentialDataBytes = await utils.makePaymentBundleBytes(c.holeskySigner, txReward)
 	const allowedPeekers = [c.mevshareAdd, c.builderAdd, PRECOMPILES.buildEthBlock]
 	const [s, e] = await sendBidForBlock(
 		c.suaveSigner, 
@@ -112,14 +112,14 @@ interface ITaskConfig {
 	mevshareAdd: string,
 	builderAdd: string,
 	executionNodeAdd: string,
-	goerliSigner: Wallet,
+	holeskySigner: Wallet,
 	suaveSigner: Wallet,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const { nslots, mevshareAdd, builderAdd } = await parseTaskArgs(hre, taskArgs)
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const goerliSigner = utils.makeGoerliSigner()
+	const holeskySigner = utils.makeHoleskySigner()
 	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
 	const suaveSigner = utils.makeSuaveSigner(useTestnet)
 	return {
@@ -127,7 +127,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 		mevshareAdd,
 		builderAdd,
 		executionNodeAdd,
-		goerliSigner,
+		holeskySigner,
 		suaveSigner,
 	}
 }
