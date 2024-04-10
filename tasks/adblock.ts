@@ -75,13 +75,6 @@ async function submitAdBid(c: ITaskConfig): Promise<boolean> {
 	process.stdout.write('📢 Submitting ad ... ')
 	const blockNum = await c.holeskySigner.provider.getBlockNumber()
 	const bidAmount = ethers.utils.parseEther(c.adBid.toString())
-	console.log(c.suaveSigner,
-		c.holeskySigner,
-		c.executionNodeAdd, 
-		c.adauctionAdd,
-		blockNum + c.blockrange,
-		c.extra,
-		bidAmount)
 	const [s, e] = await sendAdForBlock(
 		c.suaveSigner,
 		c.holeskySigner,
