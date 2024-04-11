@@ -80,8 +80,8 @@ export function bundleToBytes(bundle: IBundle): string {
 	return confidentialDataBytes
 }
 
-export function makeGoerliSigner() {
-	return makeSigner(getEnvValSafe('GOERLI_RPC'), getEnvValSafe('GOERLI_PK'))
+export function makeHoleskySigner() {
+	return makeSigner(getEnvValSafe('HOLESKY_RPC'), getEnvValSafe('HOLESKY_PK'))
 }
 
 export function makeSuaveSigner(useTestnet: boolean) {

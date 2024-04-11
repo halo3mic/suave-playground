@@ -12,7 +12,7 @@ const deployOptions: DeployOptions = {
 }
 
 const beforeCallback = async () => {
-	const isSettlementDeployed = !!(await (hh.companionNetworks['goerli'] as any)
+	const isSettlementDeployed = !!(await (hh.companionNetworks['holesky'] as any)
 		.deployments.getOrNull('OracleSettlementContract'))
 	if (!isSettlementDeployed) {
 		throw new Error('OracleSettlementContract must be deployed first')
@@ -20,8 +20,8 @@ const beforeCallback = async () => {
 }
 
 const afterCallaback = async (deployments: any, deployResult: any) => {
-	const goerliProvider = new ethers.providers.JsonRpcProvider(getEnvValSafe('GOERLI_RPC'))
-	const goerliSigner = new ethers.Wallet(getEnvValSafe('GOERLI_PK'), goerliProvider)
+	const holeskyProvider = new ethers.providers.JsonRpcProvider(getEnvValSafe('HOLESKY_RPC'))
+	const holeskySigner = new ethers.Wallet(getEnvValSafe('HOLESKY_PK'), holeskyProvider)
 
 	const networkConfig: any = hh.network.config
 	const suaveProvider = new SuaveProvider(
@@ -42,7 +42,7 @@ const afterCallaback = async (deployments: any, deployResult: any) => {
 	// 2. Pay the controller for gas on the settlement chain 
 	deployments.log('\t2.) Sending controller funds for gas')
 	const controllerAddress = await OracleContract.controller()
-	await goerliSigner.sendTransaction({
+	await holeskySigner.sendTransaction({
 		to: controllerAddress,
 		value: ethers.utils.parseEther('0.02')
 	})
@@ -55,7 +55,7 @@ const afterCallaback = async (deployments: any, deployResult: any) => {
 
 	// 3. Register the settlement contract
 	deployments.log('\t3.) Registering settlement contract')
-	const OracleSettlementContract = await (hh.companionNetworks['goerli'] as any)
+	const OracleSettlementContract = await (hh.companionNetworks['holesky'] as any)
 		.deployments.get('OracleSettlementContract')
 	const registerRes = await OracleContract.registerSettlementContract
 		.sendConfidentialRequest(OracleSettlementContract.address)

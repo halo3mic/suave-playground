@@ -247,8 +247,8 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 
 export function getEnvConfig(useTestnet: boolean = false) {
 	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const relayUrl = utils.getEnvValSafe('GOERLI_RELAY')
-	const beaconUrl = utils.getEnvValSafe('GOERLI_BEACON')
+	const relayUrl = utils.getEnvValSafe('HOLESKY_RELAY')
+	const beaconUrl = utils.getEnvValSafe('HOLESKY_BEACON')
 	const suaveSigner = utils.makeSuaveSigner(useTestnet)
 
 	return {

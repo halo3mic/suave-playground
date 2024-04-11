@@ -26,11 +26,9 @@ contract Builder is EthBlockContract, SuaveContract {
 		Suave.BuildBlockArgs memory blockArgs,
 		uint64 blockHeight,
 		Suave.DataId[] memory bids,
-		string memory namespace
+		string memory
 	) public virtual override onlyConfidential returns (bytes memory) {
-		(Suave.DataRecord memory blockBid, bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, namespace);
-		storeBuilderBid(blockBid.id, builderBid);
-		submitToRelay(builderBid);
+		(,bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, boostRelayUrl); // Also submits to relay
 		string memory blockHash = extractBlockHash(builderBid, blockArgs.slot);
 		return abi.encodeWithSelector(this.buildAndEmitCallback.selector, blockHash, keccak256(builderBid));
 	}
@@ -57,6 +55,7 @@ contract Builder is EthBlockContract, SuaveContract {
 	}
 
 	// Extract block-hash from stringified SubmitBlockRequest JSON object - method will fail if the struct changes!
+	// todo: extract the hash via solady: builderBidParsed.at('"message"').at('"block_hash"').value()
 	function extractBlockHash(bytes memory builderBid, uint slot) public pure returns (string memory) {
 		uint resultBytesLen = 64;
 		uint offset = 121 + decLen(slot);

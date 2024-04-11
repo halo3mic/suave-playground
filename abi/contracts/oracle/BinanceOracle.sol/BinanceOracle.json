@@ -80,7 +80,7 @@
   },
   {
     "inputs": [],
-    "name": "GOERLI_BUNDLE_ENDPOINT",
+    "name": "HOLESKY_BUNDLE_ENDPOINT",
     "outputs": [
       {
         "internalType": "string",
@@ -93,7 +93,7 @@
   },
   {
     "inputs": [],
-    "name": "GOERLI_CHAINID",
+    "name": "HOLESKY_CHAINID",
     "outputs": [
       {
         "internalType": "uint256",
@@ -106,7 +106,20 @@
   },
   {
     "inputs": [],
-    "name": "GOERLI_CHAINID_STR",
+    "name": "HOLESKY_CHAINID_STR",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REMOTE_HOLESKY_RPC",
     "outputs": [
       {
         "internalType": "string",
@@ -153,7 +166,7 @@
         "type": "bytes"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -213,20 +226,30 @@
         "type": "uint256"
       },
       {
+        "internalType": "uint256",
+        "name": "gasPrice",
+        "type": "uint256"
+      },
+      {
         "internalType": "uint64",
         "name": "settlementBlockNum",
         "type": "uint64"
+      },
+      {
+        "internalType": "bool",
+        "name": "privateSubmission",
+        "type": "bool"
       }
     ],
     "name": "queryAndSubmit",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "bytes",
         "name": "",
-        "type": "uint256"
+        "type": "bytes"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -261,6 +284,70 @@
         "internalType": "uint256",
         "name": "price",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_settlementContract",
+        "type": "address"
+      }
+    ],
+    "name": "registerCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_settlementContract",
+        "type": "address"
+      }
+    ],
+    "name": "registerSettlementContract",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "txSigned",
+        "type": "bytes"
+      }
+    ],
+    "name": "sendRawTx",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "settlementContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

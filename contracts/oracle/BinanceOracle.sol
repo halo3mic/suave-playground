@@ -14,13 +14,13 @@ import "solady/src/utils/LibString.sol";
 contract BinanceOracle is SuaveContract {
     using JSONParserLib for *;
 
-    uint public constant GOERLI_CHAINID = 5;
-    string public constant GOERLI_CHAINID_STR = "0x5";
+    uint public constant HOLESKY_CHAINID = 17000;
+    string public constant HOLESKY_CHAINID_STR = "0x4268";
     uint8 public constant DECIMALS = 4;
     string public constant S_NAMESPACE = "oracle:v0:pksecret";
-    string public constant INFURA_GOERLI_RPC = "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
+    string public constant REMOTE_HOLESKY_RPC = "https://ethereum-holesky-rpc.publicnode.com";
     string public constant URL_PARTIAL = "https://data-api.binance.vision/api/v3/ticker/price?symbol=";
-    string public constant GOERLI_BUNDLE_ENDPOINT = "https://relay-goerli.flashbots.net";
+    string public constant HOLESKY_BUNDLE_ENDPOINT = "https://relay-holesky.flashbots.net";
     
     bool isInitialized;
     Suave.DataId public pkBidId;
@@ -125,14 +125,14 @@ contract BinanceOracle is SuaveContract {
             to: _settlementContract,
             value: 0,
             data: abi.encodeWithSignature("register()"),
-            chainId: GOERLI_CHAINID,
+            chainId: HOLESKY_CHAINID,
             v: 27,
             r: hex"1111111111111111111111111111111111111111111111111111111111111111",
             s: hex"1111111111111111111111111111111111111111111111111111111111111111"
         });
         bytes memory txRlp = Transactions.encodeRLP(transaction);
         string memory pk = retreivePK();
-        txSigned = Suave.signEthTransaction(txRlp, GOERLI_CHAINID_STR, pk);
+        txSigned = Suave.signEthTransaction(txRlp, HOLESKY_CHAINID_STR, pk);
     }
 
     function createPriceUpdateTx(
@@ -148,14 +148,14 @@ contract BinanceOracle is SuaveContract {
             to: settlementContract,
             value: 0,
             data: abi.encodeWithSignature("updatePrice(string,uint256)", ticker, price),
-            chainId: GOERLI_CHAINID,
+            chainId: HOLESKY_CHAINID,
             v: 27,
             r: hex"1111111111111111111111111111111111111111111111111111111111111111",
             s: hex"1111111111111111111111111111111111111111111111111111111111111111"
         });
         bytes memory txRlp = Transactions.encodeRLP(transaction);
         string memory pk = retreivePK();
-        txSigned = Suave.signEthTransaction(txRlp, GOERLI_CHAINID_STR, pk);
+        txSigned = Suave.signEthTransaction(txRlp, HOLESKY_CHAINID_STR, pk);
     }
 
     function sendRawTx(bytes memory txSigned) public view returns (bytes memory) {
@@ -172,7 +172,7 @@ contract BinanceOracle is SuaveContract {
         request.headers = new string[](1);
         request.headers[0] = "Content-Type: application/json";
         request.withFlashbotsSignature = false;
-        request.url = INFURA_GOERLI_RPC;
+        request.url = REMOTE_HOLESKY_RPC;
         return doHttpRequest(request);
     }
 
@@ -212,7 +212,7 @@ contract BinanceOracle is SuaveContract {
         txns[0] = txSigned;
         bytes memory bundleReqParams = bundleRequestParams(txns, settlementBlockNum);
         (bool successReq, bytes memory dataReq) = Suave.SUBMIT_BUNDLE_JSON_RPC.staticcall(abi.encode(
-            GOERLI_BUNDLE_ENDPOINT, 
+            HOLESKY_BUNDLE_ENDPOINT, 
             "eth_sendBundle", 
             bundleReqParams
         ));
