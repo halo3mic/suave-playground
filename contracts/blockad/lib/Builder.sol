@@ -55,7 +55,7 @@ contract Builder is EthBlockContract, SuaveContract {
 	}
 
 	// Extract block-hash from stringified SubmitBlockRequest JSON object - method will fail if the struct changes!
-	// todo: extract the hash via solady/src/utils/JSONParserLib.sol: builderBidParsed.at('"message"').at('"block_hash"').value()
+	// todo: extract the hash via solady: builderBidParsed.at('"message"').at('"block_hash"').value()
 	function extractBlockHash(bytes memory builderBid, uint slot) public pure returns (string memory) {
 		uint resultBytesLen = 64;
 		uint offset = 121 + decLen(slot);
