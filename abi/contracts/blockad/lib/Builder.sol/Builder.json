@@ -208,7 +208,7 @@
       },
       {
         "internalType": "string",
-        "name": "namespace",
+        "name": "",
         "type": "string"
       }
     ],
@@ -551,7 +551,7 @@
       },
       {
         "internalType": "string",
-        "name": "namespace",
+        "name": "relayUrl",
         "type": "string"
       }
     ],
