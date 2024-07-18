@@ -20,6 +20,8 @@ const RIGIL_PK = getEnvValSafe('RIGIL_PK')
 const SUAVE_RPC = getEnvValSafe('SUAVE_RPC')
 const HOLESKY_RPC = getEnvValSafe('HOLESKY_RPC')
 const RIGIL_RPC = getEnvValSafe('RIGIL_RPC')
+const TOLIMAN_RPC = getEnvValSafe('TOLIMAN_RPC')
+const TOLIMAN_PK = getEnvValSafe('TOLIMAN_PK')
 
 
 export default {
@@ -49,6 +51,14 @@ export default {
 			chainId: 16813125,
 			url: RIGIL_RPC,
 			accounts: [ RIGIL_PK ],
+			companionNetworks: {
+				holesky: 'holesky',
+			},
+		}, 
+		toliman: {
+			chainId: 33626250, 
+			url: TOLIMAN_RPC,
+			accounts: [ TOLIMAN_PK ], 
 			companionNetworks: {
 				holesky: 'holesky',
 			},
