@@ -48,7 +48,7 @@ async function sendMevShareBundles(c: ITaskConfig) {
 async function submitAndBuild(c: ITaskConfig) {
 	const precall = () => submitMevShareBid(c)
 	const buildConfig: IBuildConfig = {
-		...getBuildEnvConfig(),
+		...await getBuildEnvConfig(c.chainId),
 		executionNodeAdd: c.executionNodeAdd, 
 		suaveSigner: c.suaveSigner,
 		builderAdd: c.builderAdd,
@@ -114,14 +114,17 @@ interface ITaskConfig {
 	executionNodeAdd: string,
 	holeskySigner: Wallet,
 	suaveSigner: Wallet,
+	chainId: number,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const { nslots, mevshareAdd, builderAdd } = await parseTaskArgs(hre, taskArgs)
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
 	const holeskySigner = utils.makeHoleskySigner()
-	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
-	const suaveSigner = utils.makeSuaveSigner(useTestnet)
+	const chainId = utils.getNetworkChainId(hre)
+	const suaveSigner = utils.makeSuaveSigner(chainId)
+	const executionNodeAdd = await (suaveSigner.provider as any)
+		.send('eth_kettleAddress', [])
+		.then((res: string[]) => res[0])
 	return {
 		nslots,
 		mevshareAdd,
@@ -129,6 +132,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 		executionNodeAdd,
 		holeskySigner,
 		suaveSigner,
+		chainId,
 	}
 }
 

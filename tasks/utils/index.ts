@@ -3,6 +3,7 @@ import { ethers, Wallet, BigNumber } from 'ethers'
 
 import { ConfidentialComputeRecord } from '../../src/confidential-types'
 import { getEnvValSafe, fetchAbis } from '../../src/utils'
+import { RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID } from './const'
 
 const abis = fetchAbis()
 
@@ -33,6 +34,7 @@ export async function createConfidentialComputeRecord(
 		value: ethers.utils.parseEther('0'),
 		gas: ethers.BigNumber.from(2000000),
 		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
+		isEIP712: false,
 		data: calldata, 
 		executionNode: executionNodeAddr,
 		...options
@@ -84,10 +86,18 @@ export function makeHoleskySigner() {
 	return makeSigner(getEnvValSafe('HOLESKY_RPC'), getEnvValSafe('HOLESKY_PK'))
 }
 
-export function makeSuaveSigner(useTestnet: boolean) {
-	const rpcUrl = getEnvValSafe(useTestnet ? 'RIGIL_RPC' : 'SUAVE_RPC')
-	const pk = getEnvValSafe(useTestnet ? 'RIGIL_PK' : 'SUAVE_PK')
-	return makeSigner(rpcUrl, pk)
+export function makeSuaveSigner(hhChainId: number) {
+	const [ rpc, pk ] = (() => {
+        switch (hhChainId) {
+            case RIGIL_CHAIN_ID:
+				return ['RIGIL_RPC', 'RIGIL_PK']
+			case TOLIMAN_CHAIN_ID:
+				return ['TOLIMAN_RPC', 'TOLIMAN_PK']
+			default:
+				return ['SUAVE_RPC', 'SUAVE_PK']
+        }
+    })()
+	return makeSigner(getEnvValSafe(rpc), getEnvValSafe(pk))
 }
 
 export function makeSigner(rpcUrl: string, pk: string) {

@@ -6,7 +6,7 @@ import {
 	ConfidentialComputeRequest, 
 	ConfidentialComputeRecord 
 } from '../src/confidential-types'
-import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
+import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID } from './utils/const'
 import * as utils from './utils'
 import {
 	BeaconPAListener, 
@@ -31,7 +31,7 @@ task('build-blocks', 'Build blocks and send them to relay')
 	.addFlag('blockad', 'Whether to build blocks for ad-bids')
 	.addFlag('resubmit', 'Whether to resubmit to relay on err `payload attributes not (yet) known`')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
+		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Sending blocks for the next ${config.nSlots} slots`)
@@ -236,20 +236,22 @@ export interface ITaskConfig {
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
-	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
+	const hhChainId = utils.getNetworkChainId(hre)
 	const cliConfig = await parseTaskArgs(hre, taskArgs)
-	const envConfig = getEnvConfig(useTestnet)
+	const envConfig = await getEnvConfig(hhChainId)
 	return {
 		...envConfig,
 		...cliConfig,
 	}
 }
 
-export function getEnvConfig(useTestnet: boolean = false) {
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
+export async function getEnvConfig(hhChainId: number) {
 	const relayUrl = utils.getEnvValSafe('HOLESKY_RELAY')
 	const beaconUrl = utils.getEnvValSafe('HOLESKY_BEACON')
-	const suaveSigner = utils.makeSuaveSigner(useTestnet)
+	const suaveSigner = utils.makeSuaveSigner(hhChainId)
+	const executionNodeAdd = await (suaveSigner.provider as any)
+		.send('eth_kettleAddress', [])
+		.then((res: string[]) => res[0])
 
 	return {
 		executionNodeAdd,

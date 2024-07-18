@@ -3,7 +3,7 @@ import { ethers, Wallet, BigNumber } from 'ethers'
 import { task, types } from 'hardhat/config'
 
 import { ConfidentialComputeRequest } from '../src/confidential-types'
-import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
+import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID } from './utils/const'
 import * as utils from './utils'
 import {
 	getEnvConfig as getBuildEnvConfig,
@@ -22,13 +22,14 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addOptionalParam('mevshare', 'Address of a MevShare contract. By default fetch most recently deployed one.')
 	.addFlag('build', 'Whether to build blocks after sending the ad-request')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
+		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID])
 		const config = await getConfig(hre, taskArgs)
 
 		console.log(`Suave signer: ${config.suaveSigner.address}`)
 		console.log(`Holesky signer: ${config.holeskySigner.address}`)
 		
 		await cInitIfNeeded(config)
+		console.log('here')
 		if (taskArgs.build) {
 			console.log(`Sending blocks for the next ${config.blockrange} slots`)
 			await submitAndBuild(config)
@@ -48,7 +49,7 @@ async function submitAndBuild(c: ITaskConfig) {
 		process.exit(0)
 
 	const buildConfig: IBuildConfig = {
-		...getBuildEnvConfig(),
+		...await getBuildEnvConfig(c.chainId),
 		executionNodeAdd: c.executionNodeAdd,
 		suaveSigner: c.suaveSigner, 
 		builderAdd: c.adauctionAdd,
@@ -60,12 +61,12 @@ async function submitAndBuild(c: ITaskConfig) {
 		{ 
 			iface: adbidInterface, 
 			method: 'buildBlock',
-			// precall: async () => {
-			// 	return utils.sleep(4000).then(() => true)
-			// 	// c.adBid += 0.002
-			// 	// c.extra = '🔥 ' + c.adBid + ' 💧'
-			// 	// return await submitAdBid(c)
-			// }
+			precall: async () => {
+				return utils.sleep(4000).then(() => true)
+				// c.adBid += 0.002
+				// c.extra = '🔥 ' + c.adBid + ' 💧'
+				// return await submitAdBid(c)
+			}
 		}
 	)
 }
@@ -168,22 +169,26 @@ interface ITaskConfig {
 	adBid: number,
 	adauctionAdd: string,
 	blockrange: number,
+	chainId: number
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
-	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
+	const chainId = utils.getNetworkChainId(hre)
 	const cliConfig = await parseTaskArgs(hre, taskArgs)
-	const envConfig = getEnvConfig(useTestnet)
+	const envConfig = await getEnvConfig(chainId)
 	return {
 		...cliConfig, 
 		...envConfig,
+		chainId
 	}
 }
 
-export function getEnvConfig(useTestnet: boolean = false) {
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const suaveSigner = utils.makeSuaveSigner(useTestnet)
+export async function getEnvConfig(hhChainId: number) {
 	const holeskySigner = utils.makeHoleskySigner()
+	const suaveSigner = utils.makeSuaveSigner(hhChainId);
+	const executionNodeAdd = await (suaveSigner.provider as any)
+		.send('eth_kettleAddress', [])
+		.then((res: string[]) => res[0])
 	return {
 		executionNodeAdd,
 		holeskySigner,
