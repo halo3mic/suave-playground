@@ -33,7 +33,7 @@ contract Builder is EthBlockContract, SuaveContract {
 		return abi.encodeWithSelector(this.buildAndEmitCallback.selector, blockHash, keccak256(builderBid));
 	}
 
-	function submitBlock(uint slot) external view onlyConfidential returns (bytes memory) {
+	function submitBlock(uint slot) external onlyConfidential returns (bytes memory) {
 		bytes memory builderBid = Suave.confidentialInputs();
 		submitToRelay(builderBid);
 		string memory blockHash = extractBlockHash(builderBid, slot);
@@ -48,7 +48,7 @@ contract Builder is EthBlockContract, SuaveContract {
 		}
 	}
 
-	function storeBuilderBid(Suave.DataId blockBidId, bytes memory builderBid) internal view {
+	function storeBuilderBid(Suave.DataId blockBidId, bytes memory builderBid) internal {
 		address[] memory peekers = new address[](1);
 		peekers[0] = address(this);
 		Suave.confidentialStore(blockBidId, BB_NAMESPACE, builderBid);

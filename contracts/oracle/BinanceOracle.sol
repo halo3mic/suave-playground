@@ -5,10 +5,10 @@ pragma solidity ^0.8.13;
 
 import { AnyBundleContract, Suave } from "../standard_peekers/bids.sol";
 import { SuaveContract } from "../blockad/lib/SuaveContract.sol";
-import "../../node_modules/solady/src/utils/JSONParserLib.sol";
+import "solady/src/utils/JSONParserLib.sol";
+import "solady/src/utils/LibString.sol";
 import "../libraries/Transactions.sol";
 import "../libraries/Bundle.sol";
-import "solady/src/utils/LibString.sol";
 
 
 contract BinanceOracle is SuaveContract {
@@ -22,7 +22,7 @@ contract BinanceOracle is SuaveContract {
     string public constant URL_PARTIAL = "https://data-api.binance.vision/api/v3/ticker/price?symbol=";
     string public constant HOLESKY_BUNDLE_ENDPOINT = "https://relay-holesky.flashbots.net";
     
-    bool isInitialized;
+    bool public isInitialized;
     Suave.DataId public pkBidId;
     address public controller;
     address public settlementContract;
@@ -57,7 +57,7 @@ contract BinanceOracle is SuaveContract {
 
     // 🤐 MEVM Methods
 
-    function confidentialConstructor() external view onlyConfidential returns (bytes memory) {
+    function confidentialConstructor() external onlyConfidential returns (bytes memory) {
         crequire(!isInitialized, "Already initialized");
 
         string memory pk = Suave.privateKeyGen(Suave.CryptoSignature.SECP256);
@@ -73,12 +73,12 @@ contract BinanceOracle is SuaveContract {
 
     function registerSettlementContract(
         address _settlementContract
-    ) external view onlyConfidential() returns (bytes memory) {
+    ) external onlyConfidential() returns (bytes memory) {
         // Allow multiple registrations for the same address (consider the intial tx is not commited to the chain)
         require(_settlementContract == settlementContract || settlementContract == address(0), "Already registered");
         bytes memory signedTx = createRegisterTx(_settlementContract);
-        sendRawTx(signedTx);
-        return abi.encodeWithSelector(this.registerCallback.selector, _settlementContract);
+        // sendRawTx(signedTx);
+        return bytes("");
     }
 
     function queryAndSubmit(
@@ -87,7 +87,7 @@ contract BinanceOracle is SuaveContract {
         uint gasPrice,
         uint64 settlementBlockNum,
         bool privateSubmission
-    ) external view onlyConfidential returns (bytes memory) {
+    ) external onlyConfidential returns (bytes memory) {
         uint price = queryLatestPrice(ticker);
         submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum, privateSubmission);
         return abi.encodeWithSelector(this.queryAndSubmitCallback.selector, ticker, price);
@@ -108,7 +108,7 @@ contract BinanceOracle is SuaveContract {
         uint gasPrice,
         uint64 settlementBlockNum,
         bool privateSubmission
-    ) internal view {
+    ) internal {
         bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce, gasPrice);
         if (privateSubmission) {
             sendBundle(signedTx, settlementBlockNum);
@@ -117,7 +117,7 @@ contract BinanceOracle is SuaveContract {
         }
     }
 
-    function createRegisterTx(address _settlementContract) internal view returns (bytes memory txSigned) {
+    function createRegisterTx(address _settlementContract) internal returns (bytes memory txSigned) {
         Transactions.EIP155 memory transaction = Transactions.EIP155({
             nonce: 0,
             gasPrice: 100 gwei,
@@ -140,7 +140,7 @@ contract BinanceOracle is SuaveContract {
         uint price, 
         uint nonce, 
         uint gasPrice
-    ) internal view returns (bytes memory txSigned)  {
+    ) internal returns (bytes memory txSigned)  {
         Transactions.EIP155 memory transaction = Transactions.EIP155({
             nonce: nonce,
             gasPrice: gasPrice,
@@ -173,6 +173,7 @@ contract BinanceOracle is SuaveContract {
         request.headers[0] = "Content-Type: application/json";
         request.withFlashbotsSignature = false;
         request.url = REMOTE_HOLESKY_RPC;
+        request.timeout = 10000;
         return doHttpRequest(request);
     }
 
@@ -196,7 +197,8 @@ contract BinanceOracle is SuaveContract {
             method: "GET",
             headers: headers,
             body: new bytes(0),
-            withFlashbotsSignature: false
+            withFlashbotsSignature: false,
+            timeout: 10_000
         });
         return doHttpRequest(request);
     }
@@ -236,7 +238,7 @@ contract BinanceOracle is SuaveContract {
         return params;
     }
 
-    function storePK(bytes memory pk) internal view returns (Suave.DataId) {
+    function storePK(bytes memory pk) internal returns (Suave.DataId) {
 		address[] memory peekers = new address[](3);
 		peekers[0] = address(this);
 		peekers[1] = Suave.FETCH_DATA_RECORDS;
@@ -246,7 +248,7 @@ contract BinanceOracle is SuaveContract {
 		return secretBid.id;
 	}
 
-    function retreivePK() internal view returns (string memory) {
+    function retreivePK() internal returns (string memory) {
         bytes memory pkBytes =  Suave.confidentialRetrieve(pkBidId, S_NAMESPACE);
         return string(pkBytes);
     }
@@ -304,7 +306,7 @@ function trimStrEdges(string memory _input) pure returns (string memory) {
     return string(result);
 }
 
-function getAddressForPk(string memory pk) view returns (address) {
+function getAddressForPk(string memory pk) returns (address) {
     bytes32 digest = keccak256(abi.encode("yo"));
     bytes memory sig = Suave.signMessage(abi.encodePacked(digest), Suave.CryptoSignature.SECP256, pk);
     return recoverSigner(digest, sig);
