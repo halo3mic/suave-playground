@@ -77,8 +77,7 @@ contract BinanceOracle is SuaveContract {
         // Allow multiple registrations for the same address (consider the intial tx is not commited to the chain)
         require(_settlementContract == settlementContract || settlementContract == address(0), "Already registered");
         bytes memory signedTx = createRegisterTx(_settlementContract);
-        // sendRawTx(signedTx);
-        return bytes("");
+        return sendRawTx(signedTx);
     }
 
     function queryAndSubmit(

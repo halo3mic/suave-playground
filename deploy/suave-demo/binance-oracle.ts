@@ -24,20 +24,20 @@ const afterCallaback = async (deployments: any, deployResult: any) => {
 	const holeskySigner = new ethers.Wallet(getEnvValSafe('HOLESKY_PK'), holeskyProvider)
 
 	const networkConfig: any = hh.network.config
-	const suaveProvider = new SuaveProvider(
-		networkConfig.url, 
-		getEnvValSafe('EXECUTION_NODE') // todo: make variable (now needs to be changed in .env)
-	)
+	const suaveProvider = new SuaveProvider(networkConfig.url)
 	const suaveWallet = new SuaveWallet(networkConfig.accounts[0], suaveProvider)
 	const OracleContract = new SuaveContract(deployResult.address, deployResult.abi, suaveWallet)
 
 	// 1. Init the Oracle
 	deployments.log('\t1.) Initalizing OracleContract')
-	const initRes = await OracleContract.confidentialConstructor
-		.sendConfidentialRequest({})
-	const receipt = await initRes.wait()
-	if (receipt.status == 0)
-		throw new Error('ConfidentialInit callback failed')
+	const isInitiated = await OracleContract.isInitialized()
+	if (!isInitiated) {
+		const initRes = await OracleContract.confidentialConstructor
+			.sendConfidentialRequest({})
+		const receipt = await initRes.wait()
+		if (receipt.status == 0)
+			throw new Error('ConfidentialInit callback failed')
+	}
     
 	// 2. Pay the controller for gas on the settlement chain 
 	deployments.log('\t2.) Sending controller funds for gas')
