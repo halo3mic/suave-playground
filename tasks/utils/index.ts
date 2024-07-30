@@ -1,44 +1,20 @@
 import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { ethers, Wallet, BigNumber } from 'ethers'
 
-import { ConfidentialComputeRecord } from '../../src/confidential-types'
-import { getEnvValSafe, fetchAbis } from '../../src/utils'
+import {
+	ConfidentialTransactionResponse,
+	SuaveJsonRpcProvider,
+	SuaveContract,
+	SuaveWallet, 
+} from 'ethers-suave'
 import { RIGIL_CHAIN_ID, TOLIMAN_CHAIN_ID } from './const'
 
-const abis = fetchAbis()
-
-export function getInterface(name: string) {
-	return new ethers.utils.Interface(abis[name])
-}
 
 export type Result<T> = [T, null] | [null, string]
 
 export interface IBundle {
 	txs: Array<string>,
 	revertingHashes: Array<string>,
-}
-
-export async function createConfidentialComputeRecord(
-	suaveSigner: Wallet, 
-	calldata: string, 
-	executionNodeAddr: string, 
-	recipient: string,
-	options: any = {} // todo: restrict
-): Promise<ConfidentialComputeRecord> {
-	const suaveNonce = await suaveSigner.getTransactionCount()
-	const chainId = await suaveSigner.getChainId()
-	return {
-		chainId,
-		nonce: suaveNonce,
-		to: recipient,
-		value: ethers.utils.parseEther('0'),
-		gas: ethers.BigNumber.from(2000000),
-		gasPrice: ethers.utils.parseUnits('20', 'gwei'),
-		isEIP712: false,
-		data: calldata, 
-		executionNode: executionNodeAddr,
-		...options
-	}
 }
 
 export async function makePaymentBundleBytes(signer: Wallet, reward: BigNumber): Promise<string> {
@@ -86,7 +62,7 @@ export function makeHoleskySigner() {
 	return makeSigner(getEnvValSafe('HOLESKY_RPC'), getEnvValSafe('HOLESKY_PK'))
 }
 
-export function makeSuaveSigner(hhChainId: number) {
+export function makeSuaveSigner(hhChainId: number): SuaveWallet {
 	const [ rpc, pk ] = (() => {
         switch (hhChainId) {
             case RIGIL_CHAIN_ID:
@@ -97,18 +73,22 @@ export function makeSuaveSigner(hhChainId: number) {
 				return ['SUAVE_RPC', 'SUAVE_PK']
         }
     })()
-	return makeSigner(getEnvValSafe(rpc), getEnvValSafe(pk))
+	const provider = new SuaveJsonRpcProvider(getEnvValSafe(rpc))
+	const wallet = new SuaveWallet(getEnvValSafe(pk), provider)
+	return wallet
+}
+
+function getEnvValSafe(key: string): string {
+	const endpoint = process.env[key]
+	if (!endpoint)
+		throw(`Missing env var ${key}`)
+	return endpoint
 }
 
 export function makeSigner(rpcUrl: string, pk: string) {
 	const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
 	const signer = new ethers.Wallet(pk, provider)
 	return signer
-}
-
-export async function signTransactionNonRlp(signer, tx) {
-	const rlpSigned = await signer.signTransaction(tx)
-	return ethers.utils.parseTransaction(rlpSigned)
 }
 
 export async function fetchDeployedContract(hre: HRE, deploymentName: string) {
@@ -139,21 +119,31 @@ export async function getNextBaseFee(provider: ethers.providers.Provider): Promi
 	})
 }
 
-export async function submitRawTxPrettyRes(
-	provider: ethers.providers.Provider, 
-	inputBytes: string, 
-	iface: ethers.utils.Interface, 
+export async function prettyPromise(
+	promise: Promise<ConfidentialTransactionResponse>,
+	contract: SuaveContract,
 	label_?: string
 ): Promise<Result<Promise<string>>> {
 	const label: string = label_ ? `'${label_}'` : ''
-	return (provider as any).send('eth_sendRawTransaction', [inputBytes])
-		.then(r => [handleNewSubmission(iface, provider, r, label), null])
-		.catch(err => [null, handleSubmissionErr(iface, err, label)])
+	return promise
+		.then(async r => {
+			const success = handleNewSubmission(r, contract, label);
+			return [success, null] as Result<Promise<string>>;
+		})
+		.catch(err => {
+			const error = handleSubmissionErr(contract, err, label);
+			return [null, error] as Result<Promise<string>>;
+		});
 }
 
-export async function handleNewSubmission(iface: any, provider: any, txHash: string, label: string): Promise<string> {
-	const receipt = await provider.waitForTransaction(txHash, 1)
-	let output = `\t${label} Tx ${txHash} confirmed:`
+
+export async function handleNewSubmission(
+	response: ConfidentialTransactionResponse, 
+	contract: SuaveContract, 
+	label: string
+): Promise<string> {
+	const receipt = await response.wait()
+	let output = `\t${label} Tx ${response.hash} confirmed:`
 	if (receipt.status === 0) {
 		output += '\t❌ Tx execution failed'
 		output += `\n\t${JSON.stringify(receipt)}`
@@ -162,16 +152,10 @@ export async function handleNewSubmission(iface: any, provider: any, txHash: str
 		output += '\n\t✅ Tx execution succeeded\n'
 		receipt.logs.forEach(log => {
 			try {
-				const parsedLog = iface.parseLog(log)
+				const parsedLog = contract.interface.parseLog({data: log.data, topics: log.topics as string[]})
 				output += `${tab(1)}${parsedLog.name}\n`
-				parsedLog.eventFragment.inputs.forEach((input, i) => {
-					if (parsedLog.name == 'HintEvent' && input.name == 'hint') {
-						const hintTo = parsedLog.args[i].slice(0, 43)
-						const hintData = '0x' + parsedLog.args[i].slice(43)
-						output += `${tab(2)}${input.name}:\n${tab(3)}to: ${hintTo}\n${tab(3)}data: ${hintData}\n`
-					} else {
-						output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
-					}
+				parsedLog.fragment.inputs.forEach((input, i) => {
+					output += `${tab(2)}${input.name}: ${parsedLog.args[i]}\n`
 				})
 			} catch {
 				output += `${tab(1)}${log.topics[0]}\n`
@@ -184,24 +168,44 @@ export async function handleNewSubmission(iface: any, provider: any, txHash: str
 	return output + '\n'
 }
 
-export function handleSubmissionErr(iface: ethers.utils.Interface, err: any, label: string): string {
-	const rpcErr = JSON.parse(err.body)?.error?.message
-	if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
-		const revertMsg = rpcErr.slice('execution reverted: '.length)
-		if (revertMsg != '0x') {
-			try {
-				const err = iface.parseError(revertMsg)
-				if (err.signature == 'PeekerReverted(address,bytes)') {
-					const errStr = Buffer.from(err.args[1].slice(2), 'hex').toString()
-					return `\t❗️ ${label} PeekerReverted(${err.args[0]}, '${errStr})'`
+export function handleSubmissionErr(
+	contract: SuaveContract, 
+	err: any, 
+	label: string
+): string {
+	if (err.body) {
+		const rpcErr = JSON.parse(err.body)?.error?.message
+		if (rpcErr && rpcErr.startsWith('execution reverted: ')) {
+			const revertMsg = rpcErr.slice('execution reverted: '.length)
+			if (revertMsg != '0x') {
+				try {
+					const err = contract.interface.parseError(revertMsg)
+					if (err.signature == 'PeekerReverted(address,bytes)') {
+						const errStr = Buffer.from(err.args[1].slice(2), 'hex').toString()
+						return `\t❗️ ${label} PeekerReverted(${err.args[0]}, '${errStr})'`
+					}
+					return `\t❗️ ${label} ${err.signature}(${err.args.map(a => `'${a}'`).join(',')})`
+				} catch {
+					return `\t❗️ ${label} ${rpcErr}`
 				}
-				return `\t❗️ ${label} ${err.signature}(${err.args.map(a => `'${a}'`).join(',')})`
-			} catch {
-				return `\t❗️ ${label} ${rpcErr}`
 			}
 		}
 	}
-	return `\t❗️ ${label} ` + rpcErr
+	return `\t❗️ ${label} ` + err
+}
+
+
+export async function handleResult<T>(result: Result<Promise<T>>): Promise<boolean> {
+	const [s, e] = result
+	if (s) {
+		console.log('✅')
+		await s.then(console.log)
+		return true
+	} else {
+		console.log('❌')
+		console.log(e)
+		return false
+	}
 }
 
 export function getRandomStr() {

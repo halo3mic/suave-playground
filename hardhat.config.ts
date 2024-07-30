@@ -1,12 +1,11 @@
 
-import { config as dconfig } from 'dotenv'
+import {config as dconfig} from 'dotenv'
 import '@nomiclabs/hardhat-waffle'
 import 'hardhat-deploy-ethers'
 import 'hardhat-abi-exporter'
-import 'hardhat-tracer'
 import 'hardhat-deploy'
 
-import { getEnvValSafe } from './src/utils'
+import { getEnvValSafe } from './tasks/utils'
 import './tasks/oracle-updates'
 import './tasks/build-blocks'
 import './tasks/mevshare'
@@ -35,7 +34,7 @@ export default {
 	networks: {
 		holesky: {
 			chainId: 17000,
-			url: HOLESKY_RPC, // todo move to holesky
+			url: HOLESKY_RPC,
 			accounts: [ HOLESKY_PK ],
 		}, 
 		suave: {

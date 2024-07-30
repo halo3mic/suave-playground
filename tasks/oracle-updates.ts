@@ -2,10 +2,9 @@ import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { task, types } from 'hardhat/config'
 import { Wallet } from 'ethers'
 
-import { SuaveProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
+import { SuaveJsonRpcProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
 import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
 import * as utils from './utils'
-
 
 task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 	.addParam('ticker', 'Binance ticker of the asset to update')
@@ -77,7 +76,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const holeskySigner = utils.makeHoleskySigner()
 
 	const networkConfig: any = hre.network.config
-	const suaveProvider = new SuaveProvider(networkConfig.url, executionNodeAdd)
+	const suaveProvider = new SuaveJsonRpcProvider(networkConfig.url)
 	const suaveSigner = new SuaveWallet(networkConfig.accounts[0], suaveProvider)
 	
 	const oracleContract = new SuaveContract(
