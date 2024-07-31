@@ -74,7 +74,7 @@ async function sendAdForBlock(
 	const bidAmount = ethers.utils.parseEther(c.adBid.toString())
 
 	const confidentialInputs = await utils.makePaymentBundleBytes(c.holeskySigner, bidAmount)
-	const promise = c.blockad.buyAd.sendConfidentialRequest(blockLimit, c.extra, {confidentialInputs})
+	const promise = c.blockad.buyAd.sendCCR(blockLimit, c.extra, {confidentialInputs})
 	return utils.prettyPromise(promise, c.blockad, 'Building block')
 }
 
@@ -91,7 +91,7 @@ async function cInitIfNeeded(c: ITaskConfig): Promise<void> {
 
 async function confidentialInit(c: ITaskConfig): Promise<boolean> {
 	const confidentialInputs = ethers.utils.id(utils.getRandomStr())
-	let ccrPromise = c.blockad.confidentialConstructor.sendConfidentialRequest({ confidentialInputs })
+	let ccrPromise = c.blockad.confidentialConstructor.sendCCR({ confidentialInputs })
 	console.log('Sending init tx')
 	return utils.prettyPromise(ccrPromise, c.blockad, 'Building block')
 		.then(utils.handleResult)

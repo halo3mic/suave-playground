@@ -1,8 +1,8 @@
-import { SuaveProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
+import { SuaveJsonRpcProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
 import { ethers } from 'hardhat'
 import * as hh from 'hardhat'
 import { makeDeployCallback, DeployOptions } from '../deploy-utils'
-import { getEnvValSafe } from '../../src/utils'
+import { getEnvValSafe } from '../../tasks/utils'
 
 const deployOptions: DeployOptions = {
 	name: 'BinanceOracle', 
@@ -24,22 +24,19 @@ const afterCallaback = async (deployments: any, deployResult: any) => {
 	const holeskySigner = new ethers.Wallet(getEnvValSafe('HOLESKY_PK'), holeskyProvider)
 
 	const networkConfig: any = hh.network.config
-	const suaveProvider = new SuaveProvider(networkConfig.url)
+	const suaveProvider = new SuaveJsonRpcProvider(networkConfig.url)
 	const suaveWallet = new SuaveWallet(networkConfig.accounts[0], suaveProvider)
 	const OracleContract = new SuaveContract(deployResult.address, deployResult.abi, suaveWallet)
 
-	// 1. Init the Oracle
 	deployments.log('\t1.) Initalizing OracleContract')
 	const isInitiated = await OracleContract.isInitialized()
 	if (!isInitiated) {
-		const initRes = await OracleContract.confidentialConstructor
-			.sendConfidentialRequest({})
+		const initRes = await OracleContract.confidentialConstructor.sendCCR()
 		const receipt = await initRes.wait()
 		if (receipt.status == 0)
 			throw new Error('ConfidentialInit callback failed')
 	}
     
-	// 2. Pay the controller for gas on the settlement chain 
 	deployments.log('\t2.) Sending controller funds for gas')
 	const controllerAddress = await OracleContract.controller()
 	await holeskySigner.sendTransaction({
@@ -53,12 +50,11 @@ const afterCallaback = async (deployments: any, deployResult: any) => {
 			}
 		})
 
-	// 3. Register the settlement contract
 	deployments.log('\t3.) Registering settlement contract')
 	const OracleSettlementContract = await (hh.companionNetworks['holesky'] as any)
 		.deployments.get('OracleSettlementContract')
 	const registerRes = await OracleContract.registerSettlementContract
-		.sendConfidentialRequest(OracleSettlementContract.address)
+		.sendCCR(OracleSettlementContract.address)
 	const registerReceipt = await registerRes.wait()
 	if (registerReceipt.status == 0)
 		throw new Error('ConfidentialInit callback failed')

@@ -80,7 +80,7 @@ export async function sendBidForBlock(
 	allowedPeekers: string[],
 	confidentialInputs: string,
 ): Promise<utils.Result<Promise<string>>> {
-	const promise = mevshare.newBid.sendConfidentialRequest(
+	const promise = mevshare.newBid.sendCCR(
 		blockNum, 
 		allowedPeekers, 
 		allowedPeekers, 

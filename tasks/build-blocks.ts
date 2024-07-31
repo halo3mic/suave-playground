@@ -92,7 +92,7 @@ export async function buildBlock(
 ): Promise<utils.Result<Promise<string>>> {
 	const buildArgs = makeBuildArgs(bbArgs, blockHeight)
 	const method = bopt?.method || 'buildMevShare'  // todo why this default?
-	const promise = c.builder[method].sendConfidentialRequest(...buildArgs)
+	const promise = c.builder[method].sendCCR(...buildArgs)
 	return utils.prettyPromise(promise, c.builder, 'Building block')
 }
 

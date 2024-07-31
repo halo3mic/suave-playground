@@ -44,7 +44,7 @@ async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nex
 	try {
 		const gasPrice = await c.holeskySigner.provider.getGasPrice().then(p => p.toHexString())
 		const nonce = await c.holeskySigner.provider.getTransactionCount(controllerAddress)
-		const submissionRes = await c.oracleContract.queryAndSubmit.sendConfidentialRequest(
+		const submissionRes = await c.oracleContract.queryAndSubmit.sendCCR(
 			c.ticker,
 			nonce,
 			gasPrice,
