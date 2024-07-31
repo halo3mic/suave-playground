@@ -10,7 +10,7 @@ import "solady/src/utils/LibString.sol";
 import "../libraries/Transactions.sol";
 import "../libraries/Bundle.sol";
 
-
+// todo: network agnostic
 contract BinanceOracle is SuaveContract {
     using JSONParserLib for *;
 
@@ -18,7 +18,7 @@ contract BinanceOracle is SuaveContract {
     string public constant HOLESKY_CHAINID_STR = "0x4268";
     uint8 public constant DECIMALS = 4;
     string public constant S_NAMESPACE = "oracle:v0:pksecret";
-    string public constant REMOTE_HOLESKY_RPC = "https://ethereum-holesky-rpc.publicnode.com";
+    string public constant HOLESKY_RPC = "holesky";
     string public constant URL_PARTIAL = "https://data-api.binance.vision/api/v3/ticker/price?symbol=";
     string public constant HOLESKY_BUNDLE_ENDPOINT = "https://relay-holesky.flashbots.net";
     
@@ -28,6 +28,7 @@ contract BinanceOracle is SuaveContract {
     address public settlementContract;
 
     event PriceSubmission(string ticker, uint price);
+    event RpcResponse(bytes response);
 
     // ⛓️ EVM Methods
 
@@ -41,14 +42,20 @@ contract BinanceOracle is SuaveContract {
         isInitialized = true;
     }
 
-    function registerCallback(address _settlementContract) public {
+    function registerCallback(address _settlementContract, bytes memory rpcResponse) public {
         require(settlementContract == address(0), "Already registered");
         settlementContract = _settlementContract;
+        emit RpcResponse(rpcResponse);
     }
 
     // ! Warning: This method is not restricted and emitted events should not be relied upon
-    function queryAndSubmitCallback(string memory ticker, uint price) public {
+    function queryAndSubmitCallback(
+        string memory ticker, 
+        uint price, 
+        bytes memory rpcResponse
+    ) public {
         emit PriceSubmission(ticker, price);
+        emit RpcResponse(rpcResponse);
     }
 
     fallback() external payable {
@@ -77,7 +84,8 @@ contract BinanceOracle is SuaveContract {
         // Allow multiple registrations for the same address (consider the intial tx is not commited to the chain)
         require(_settlementContract == settlementContract || settlementContract == address(0), "Already registered");
         bytes memory signedTx = createRegisterTx(_settlementContract);
-        return sendRawTx(signedTx);
+        bytes memory rpcResponse = sendRawTx(signedTx);
+        return abi.encodeWithSelector(this.registerCallback.selector, _settlementContract, rpcResponse);
     }
 
     function queryAndSubmit(
@@ -88,8 +96,20 @@ contract BinanceOracle is SuaveContract {
         bool privateSubmission
     ) external onlyConfidential returns (bytes memory) {
         uint price = queryLatestPrice(ticker);
-        submitPriceUpdate(ticker, price, nonce, gasPrice, settlementBlockNum, privateSubmission);
-        return abi.encodeWithSelector(this.queryAndSubmitCallback.selector, ticker, price);
+        bytes memory rpcResponse = submitPriceUpdate(
+            ticker, 
+            price, 
+            nonce, 
+            gasPrice, 
+            settlementBlockNum, 
+            privateSubmission
+        );
+        return abi.encodeWithSelector(
+            this.queryAndSubmitCallback.selector, 
+            ticker, 
+            price, 
+            rpcResponse
+        );
     }
 
     function queryLatestPrice(string memory ticker) public view returns (uint price) {
@@ -107,27 +127,24 @@ contract BinanceOracle is SuaveContract {
         uint gasPrice,
         uint64 settlementBlockNum,
         bool privateSubmission
-    ) internal {
+    ) internal returns (bytes memory rpcResponse) {
         bytes memory signedTx = createPriceUpdateTx(ticker, price, nonce, gasPrice);
         if (privateSubmission) {
             sendBundle(signedTx, settlementBlockNum);
         } else {
-            sendRawTx(signedTx);
+            rpcResponse = sendRawTx(signedTx);
         }
     }
 
     function createRegisterTx(address _settlementContract) internal returns (bytes memory txSigned) {
-        Transactions.EIP155 memory transaction = Transactions.EIP155({
+        Transactions.EIP155Request memory transaction = Transactions.EIP155Request({
             nonce: 0,
             gasPrice: 100 gwei,
             gas: 100_000,
             to: _settlementContract,
             value: 0,
             data: abi.encodeWithSignature("register()"),
-            chainId: HOLESKY_CHAINID,
-            v: 27,
-            r: hex"1111111111111111111111111111111111111111111111111111111111111111",
-            s: hex"1111111111111111111111111111111111111111111111111111111111111111"
+            chainId: HOLESKY_CHAINID
         });
         bytes memory txRlp = Transactions.encodeRLP(transaction);
         string memory pk = retreivePK();
@@ -140,17 +157,14 @@ contract BinanceOracle is SuaveContract {
         uint nonce, 
         uint gasPrice
     ) internal returns (bytes memory txSigned)  {
-        Transactions.EIP155 memory transaction = Transactions.EIP155({
+        Transactions.EIP155Request memory transaction = Transactions.EIP155Request({
             nonce: nonce,
             gasPrice: gasPrice,
             gas: 100_000,
             to: settlementContract,
             value: 0,
             data: abi.encodeWithSignature("updatePrice(string,uint256)", ticker, price),
-            chainId: HOLESKY_CHAINID,
-            v: 27,
-            r: hex"1111111111111111111111111111111111111111111111111111111111111111",
-            s: hex"1111111111111111111111111111111111111111111111111111111111111111"
+            chainId: HOLESKY_CHAINID
         });
         bytes memory txRlp = Transactions.encodeRLP(transaction);
         string memory pk = retreivePK();
@@ -171,7 +185,7 @@ contract BinanceOracle is SuaveContract {
         request.headers = new string[](1);
         request.headers[0] = "Content-Type: application/json";
         request.withFlashbotsSignature = false;
-        request.url = REMOTE_HOLESKY_RPC;
+        request.url = HOLESKY_RPC;
         request.timeout = 10000;
         return doHttpRequest(request);
     }
