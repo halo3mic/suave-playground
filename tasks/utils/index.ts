@@ -64,15 +64,15 @@ export function makeHoleskySigner() {
 
 export function makeSuaveSigner(hhChainId: number): SuaveWallet {
 	const [ rpc, pk ] = (() => {
-        switch (hhChainId) {
-            case RIGIL_CHAIN_ID:
-				return ['RIGIL_RPC', 'RIGIL_PK']
-			case TOLIMAN_CHAIN_ID:
-				return ['TOLIMAN_RPC', 'TOLIMAN_PK']
-			default:
-				return ['SUAVE_RPC', 'SUAVE_PK']
-        }
-    })()
+		switch (hhChainId) {
+		case RIGIL_CHAIN_ID:
+			return ['RIGIL_RPC', 'RIGIL_PK']
+		case TOLIMAN_CHAIN_ID:
+			return ['TOLIMAN_RPC', 'TOLIMAN_PK']
+		default:
+			return ['SUAVE_RPC', 'SUAVE_PK']
+		}
+	})()
 	const provider = new SuaveJsonRpcProvider(getEnvValSafe(rpc))
 	const wallet = new SuaveWallet(getEnvValSafe(pk), provider)
 	return wallet
@@ -127,13 +127,13 @@ export async function prettyPromise(
 	const label: string = label_ ? `'${label_}'` : ''
 	return promise
 		.then(async r => {
-			const success = handleNewSubmission(r, contract, label);
-			return [success, null] as Result<Promise<string>>;
+			const success = handleNewSubmission(r, contract, label)
+			return [success, null] as Result<Promise<string>>
 		})
 		.catch(err => {
-			const error = handleSubmissionErr(contract, err, label);
-			return [null, error] as Result<Promise<string>>;
-		});
+			const error = handleSubmissionErr(contract, err, label)
+			return [null, error] as Result<Promise<string>>
+		})
 }
 
 

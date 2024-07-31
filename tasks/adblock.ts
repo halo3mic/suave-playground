@@ -31,7 +31,6 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 		if (taskArgs.build) {
 			console.log(`Sending blocks for the next ${config.nslots} slots`)
 			await build(config)
-		} else {
 		}
 	})
 
@@ -91,7 +90,7 @@ async function cInitIfNeeded(c: ITaskConfig): Promise<void> {
 
 async function confidentialInit(c: ITaskConfig): Promise<boolean> {
 	const confidentialInputs = ethers.utils.id(utils.getRandomStr())
-	let ccrPromise = c.blockad.confidentialConstructor.sendCCR({ confidentialInputs })
+	const ccrPromise = c.blockad.confidentialConstructor.sendCCR({ confidentialInputs })
 	console.log('Sending init tx')
 	return utils.prettyPromise(ccrPromise, c.blockad, 'Building block')
 		.then(utils.handleResult)
@@ -133,7 +132,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 
 export async function getEnvConfig(hhChainId: number) {
 	const holeskySigner = utils.makeHoleskySigner()
-	const suaveSigner = utils.makeSuaveSigner(hhChainId);
+	const suaveSigner = utils.makeSuaveSigner(hhChainId)
 	const executionNodeAdd = await (suaveSigner.provider as any)
 		.send('eth_kettleAddress', [])
 		.then((res: string[]) => res[0])
