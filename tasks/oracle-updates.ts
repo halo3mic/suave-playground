@@ -3,7 +3,7 @@ import { task, types } from 'hardhat/config'
 import { Wallet } from 'ethers'
 
 import { SuaveJsonRpcProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
-import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
+import { supportedSuaveChains } from './utils/const'
 import * as utils from './utils'
 
 task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
@@ -12,7 +12,7 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 	.addOptionalParam('oracle', 'Address of the oracle contract. By default fetch most recently deployed one.')
 	.addFlag('privateSubmission', 'Whether to submit the oracle updates via bundles. By default use public RPC.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
+		utils.checkChain(hre, supportedSuaveChains)
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending oracle updates for the next ${config.nblocks} blocks`)
