@@ -42,7 +42,7 @@ abstract contract ConfidentialControl is SuaveContract {
 	 *                         🔒 CONFIDENTIAL METHODS                      *
 	 ***********************************************************************/
 
-	function confidentialConstructor() public view virtual onlyConfidential returns (bytes memory) {
+	function confidentialConstructor() public virtual onlyConfidential returns (bytes memory) {
 		crequire(!isInitialized(), "Already initialized");
 		bytes memory secret = Suave.confidentialInputs();
 		Suave.DataId sBidId = storeSecret(secret);
@@ -54,7 +54,7 @@ abstract contract ConfidentialControl is SuaveContract {
 	 *                         🛠️ INTERNAL METHODS                          *
 	 ***********************************************************************/
 
-	function storeSecret(bytes memory secret) internal view returns (Suave.DataId) {
+	function storeSecret(bytes memory secret) internal returns (Suave.DataId) {
 		address[] memory peekers = new address[](3);
 		peekers[0] = address(this);
 		peekers[1] = Suave.FETCH_DATA_RECORDS;
@@ -68,15 +68,15 @@ abstract contract ConfidentialControl is SuaveContract {
 		return keccak256(abi.encode(key)) == presentHash;
 	}
 
-	function getUnlockPair() internal view returns (UnlockArgs memory) {
+	function getUnlockPair() internal returns (UnlockArgs memory) {
 		return UnlockArgs(getKey(nonce), getHash(nonce + 1));
 	}
 
-	function getHash(uint _nonce) internal view returns (bytes32) {
+	function getHash(uint _nonce) internal returns (bytes32) {
 		return keccak256(abi.encode(getKey(_nonce)));
 	}
 
-	function getKey(uint _nonce) internal view returns (bytes32) {
+	function getKey(uint _nonce) internal returns (bytes32) {
 		return makeKey(getSecret(), _nonce);
 	}
 
@@ -88,7 +88,7 @@ abstract contract ConfidentialControl is SuaveContract {
 		return keccak256(abi.encode(secret, _nonce));
 	}
 
-	function getSecret() internal view returns (bytes32) {
+	function getSecret() internal returns (bytes32) {
 		bytes memory secretB = Suave.confidentialRetrieve(secretBidId, S_NAMESPACE);
 		return abi.decode(secretB, (bytes32));
 	}

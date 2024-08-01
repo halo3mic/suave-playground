@@ -2,18 +2,15 @@ import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { task, types } from 'hardhat/config'
 import { ethers, Wallet } from 'ethers'
 
-import { ConfidentialComputeRequest } from '../src/confidential-types'
+import { supportedSuaveChains, precompiles } from './utils/const'
+import { SuaveContract } from 'ethers-suave'
 import {
 	getEnvConfig as getBuildEnvConfig,
 	ITaskConfig as IBuildConfig,
 	doBlockBuilding
 } from './build-blocks'
-import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID, PRECOMPILES } from './utils/const'
-import { Result } from './utils'
 import * as utils from './utils'
 
-
-const mevshareInterface = utils.getInterface('MevShareBidContract')
 
 task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
 	.addOptionalParam('nslots', 'Number of blocks to send bundles for. Default is two.', 1, types.int)
@@ -21,12 +18,12 @@ task('mevshare-bundles', 'Send Mevshare Bundles for the next N blocks')
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
 	.addFlag('build', 'Whether to build blocks or not')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
+		utils.checkChain(hre, supportedSuaveChains)
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending bundles for the next ${config.nslots} blocks`)
 		console.log(`Holesky signer: ${config.holeskySigner.address}`)
-		console.log(`Suave signer: ${config.suaveSigner.address}`)
+		console.log(`Suave signer: ${config.suaveSignerAddress}`)
 
 		if (taskArgs.build) {
 			console.log(`Sending blocks for the next ${config.nslots} slots`)
@@ -48,10 +45,9 @@ async function sendMevShareBundles(c: ITaskConfig) {
 async function submitAndBuild(c: ITaskConfig) {
 	const precall = () => submitMevShareBid(c)
 	const buildConfig: IBuildConfig = {
-		...getBuildEnvConfig(),
-		executionNodeAdd: c.executionNodeAdd, 
-		suaveSigner: c.suaveSigner,
-		builderAdd: c.builderAdd,
+		...await getBuildEnvConfig(c.chainId),
+		suaveSignerAddress: c.suaveSignerAddress,
+		builder: c.builder,
 		nSlots: c.nslots,
 	}
 	await doBlockBuilding(buildConfig, { precall })
@@ -64,82 +60,83 @@ export async function submitMevShareBid(c: ITaskConfig, blockNum?: number): Prom
 	process.stdout.write('🦋 Submitting MevShare bundle ...')
 	const txReward = ethers.utils.parseEther('0.1') // todo: make this a param
 	const confidentialDataBytes = await utils.makePaymentBundleBytes(c.holeskySigner, txReward)
-	const allowedPeekers = [c.mevshareAdd, c.builderAdd, PRECOMPILES.buildEthBlock]
-	const [s, e] = await sendBidForBlock(
-		c.suaveSigner, 
-		c.executionNodeAdd,
-		c.mevshareAdd,
+	const allowedPeekers = await Promise.all([
+		c.mevshare.getAddress(), 
+		c.builder.getAddress(), 
+		precompiles.buildEthBlock
+	])
+	const res = await sendBidForBlock(
+		c.mevshare,
 		blockNum,
-		confidentialDataBytes, 
 		allowedPeekers,
+		confidentialDataBytes, 
 	)
-	if (s) {
-		console.log('✅')
-		await s.then(console.log)
-		return true
-	} else {
-		console.log('❌')
-		console.log(e)
-		return false
-	}
+	return utils.handleResult(res)
 }
 
 export async function sendBidForBlock(
-	suaveSigner: Wallet, 
-	executionNodeAdd: string,
-	mevshareAdd: string,
+	mevshare: SuaveContract,
 	blockNum: number,
-	confidentialBytes: string, 
 	allowedPeekers: string[],
-): Promise<Result<Promise<string>>> {
-	const calldata = mevshareInterface.encodeFunctionData('newBid', [blockNum, allowedPeekers, allowedPeekers])
-	const mevShareConfidentialRec = await utils.createConfidentialComputeRecord(
-		suaveSigner, 
-		calldata, 
-		executionNodeAdd, 
-		mevshareAdd, 
+	confidentialInputs: string,
+): Promise<utils.Result<Promise<string>>> {
+	const promise = mevshare.newBid.sendCCR(
+		blockNum, 
+		allowedPeekers, 
+		allowedPeekers, 
+		{ confidentialInputs }
 	)
-	const inputBytes = new ConfidentialComputeRequest(mevShareConfidentialRec, confidentialBytes)
-		.signWithWallet(suaveSigner)
-		.rlpEncode()
-	const res = utils.submitRawTxPrettyRes(suaveSigner.provider, inputBytes, mevshareInterface, 'MevShareBundle')
-
-	return res
+	return utils.prettyPromise(promise, mevshare, 'MevShare')
 }
 
 interface ITaskConfig {
 	nslots: number,
-	mevshareAdd: string,
-	builderAdd: string,
-	executionNodeAdd: string,
+	suaveSignerAddress: string,
+	mevshare: SuaveContract,
+	builder: SuaveContract,
 	holeskySigner: Wallet,
-	suaveSigner: Wallet,
+	chainId: number,
 }
 
 async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
-	const { nslots, mevshareAdd, builderAdd } = await parseTaskArgs(hre, taskArgs)
-	const executionNodeAdd = utils.getEnvValSafe('EXECUTION_NODE')
-	const holeskySigner = utils.makeHoleskySigner()
-	const useTestnet = utils.getNetworkChainId(hre) === RIGIL_CHAIN_ID
-	const suaveSigner = utils.makeSuaveSigner(useTestnet)
-	return {
-		nslots,
-		mevshareAdd,
-		builderAdd,
-		executionNodeAdd,
-		holeskySigner,
+	const chainId = utils.getNetworkChainId(hre)
+	const { nslots, mevshareContract, builderContract } = await parseTaskArgs(hre, taskArgs)
+	const { holeskySigner, suaveSigner } = await parseEnvConfig(hre, chainId)
+	const suaveSignerAddress = await suaveSigner.getAddress()
+	const mevshare = new SuaveContract(
+		mevshareContract.address,
+		mevshareContract.interface,
 		suaveSigner,
+	)
+	const builder = new SuaveContract(
+		builderContract.address,
+		builderContract.interface,
+		suaveSigner,
+	)
+	return {
+		suaveSignerAddress,
+		holeskySigner,
+		mevshare,
+		nslots,
+		builder,
+		chainId,
 	}
 }
 
 async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const nslots = parseInt(taskArgs.nslots)
-	const mevshareAdd = taskArgs.mevshare
-		? taskArgs.mevshare
-		: await utils.fetchDeployedContract(hre, 'MevShare').then(c => c.address)
-	const builderAdd = taskArgs.mevshare
-		? taskArgs.builder
-		: await utils.fetchDeployedContract(hre, 'Builder').then(c => c.address)
+	const mevshareContract = taskArgs.mevshare
+		? await hre.ethers.getContractAt('MevShare', taskArgs.mevshare)
+		: await utils.fetchDeployedContract(hre, 'MevShare')
+	const builderContract = taskArgs.mevshare
+		? await hre.ethers.getContractAt('Builder', taskArgs.builder)
+		: await utils.fetchDeployedContract(hre, 'Builder')
 
-	return { nslots, mevshareAdd, builderAdd }
+	return { nslots, mevshareContract, builderContract }
+}
+
+async function parseEnvConfig(hre: HRE, chainId: number) {
+	const holeskySigner = utils.makeHoleskySigner()
+	const suaveSigner = utils.makeSuaveSigner(chainId)
+	return { holeskySigner, chainId, suaveSigner }
 }

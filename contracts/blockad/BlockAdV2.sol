@@ -71,7 +71,7 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 	 *                         🔒 CONFIDENTIAL METHODS                      *
 	 ***********************************************************************/
 
-	function confidentialConstructor() public view override onlyConfidential returns (bytes memory) {
+	function confidentialConstructor() public override onlyConfidential returns (bytes memory) {
 		return ConfidentialControl.confidentialConstructor();
 	}
 
@@ -136,7 +136,7 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 		return abi.decode(res, (string));
 	}
 
-	function storePaymentBundle(bytes memory paymentBundle) internal view returns (Suave.DataId) {
+	function storePaymentBundle(bytes memory paymentBundle) internal returns (Suave.DataId) {
 		address[] memory peekers = new address[](1);
 		peekers[0] = address(this);
 		Suave.DataRecord memory paymentBid = Suave.newDataRecord(0, peekers, peekers, PB_NAMESPACE);
@@ -144,7 +144,7 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 		return paymentBid.id;
 	}
 
-	function filterOffers(uint blockHeight) internal view returns (Offer memory bestOffer, bytes memory removals) {
+	function filterOffers(uint blockHeight) internal returns (Offer memory bestOffer, bytes memory removals) {
 		for (uint i; i < requests.length; ++i) {
 			AdRequest memory request = requests[i];
 			if (request.blockLimit < blockHeight) {
@@ -161,7 +161,7 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 		}
 	}
 
-	function storeBundleInPool(uint64 blockHeight, Offer memory bestOffer) internal view {
+	function storeBundleInPool(uint64 blockHeight, Offer memory bestOffer) internal {
 		address[] memory allowedPeekers = new address[](3);
 		allowedPeekers[0] = address(builder);
 		allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;

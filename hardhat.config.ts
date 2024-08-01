@@ -1,12 +1,11 @@
 
-import { config as dconfig } from 'dotenv'
+import {config as dconfig} from 'dotenv'
 import '@nomiclabs/hardhat-waffle'
 import 'hardhat-deploy-ethers'
 import 'hardhat-abi-exporter'
-import 'hardhat-tracer'
 import 'hardhat-deploy'
 
-import { getEnvValSafe } from './src/utils'
+import { getEnvValSafe } from './tasks/utils'
 import './tasks/oracle-updates'
 import './tasks/build-blocks'
 import './tasks/mevshare'
@@ -20,6 +19,8 @@ const RIGIL_PK = getEnvValSafe('RIGIL_PK')
 const SUAVE_RPC = getEnvValSafe('SUAVE_RPC')
 const HOLESKY_RPC = getEnvValSafe('HOLESKY_RPC')
 const RIGIL_RPC = getEnvValSafe('RIGIL_RPC')
+const TOLIMAN_RPC = getEnvValSafe('TOLIMAN_RPC')
+const TOLIMAN_PK = getEnvValSafe('TOLIMAN_PK')
 
 
 export default {
@@ -33,7 +34,7 @@ export default {
 	networks: {
 		holesky: {
 			chainId: 17000,
-			url: HOLESKY_RPC, // todo move to holesky
+			url: HOLESKY_RPC,
 			accounts: [ HOLESKY_PK ],
 		}, 
 		suave: {
@@ -49,6 +50,14 @@ export default {
 			chainId: 16813125,
 			url: RIGIL_RPC,
 			accounts: [ RIGIL_PK ],
+			companionNetworks: {
+				holesky: 'holesky',
+			},
+		}, 
+		toliman: {
+			chainId: 33626250, 
+			url: TOLIMAN_RPC,
+			accounts: [ TOLIMAN_PK ], 
 			companionNetworks: {
 				holesky: 'holesky',
 			},

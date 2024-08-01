@@ -2,10 +2,9 @@ import { HardhatRuntimeEnvironment as HRE } from 'hardhat/types'
 import { task, types } from 'hardhat/config'
 import { Wallet } from 'ethers'
 
-import { SuaveProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
-import { SUAVE_CHAIN_ID, RIGIL_CHAIN_ID } from './utils/const'
+import { SuaveJsonRpcProvider, SuaveWallet, SuaveContract } from 'ethers-suave'
+import { supportedSuaveChains } from './utils/const'
 import * as utils from './utils'
-
 
 task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 	.addParam('ticker', 'Binance ticker of the asset to update')
@@ -13,7 +12,7 @@ task('oracle-updates', 'Send Binance oracle updates for the next N blocks')
 	.addOptionalParam('oracle', 'Address of the oracle contract. By default fetch most recently deployed one.')
 	.addFlag('privateSubmission', 'Whether to submit the oracle updates via bundles. By default use public RPC.')
 	.setAction(async function (taskArgs: any, hre: HRE) {
-		utils.checkChain(hre, [SUAVE_CHAIN_ID, RIGIL_CHAIN_ID])
+		utils.checkChain(hre, supportedSuaveChains)
 
 		const config = await getConfig(hre, taskArgs)
 		console.log(`Sending oracle updates for the next ${config.nblocks} blocks`)
@@ -45,7 +44,7 @@ async function submitOracleUpdate(c: ITaskConfig, controllerAddress: string, nex
 	try {
 		const gasPrice = await c.holeskySigner.provider.getGasPrice().then(p => p.toHexString())
 		const nonce = await c.holeskySigner.provider.getTransactionCount(controllerAddress)
-		const submissionRes = await c.oracleContract.queryAndSubmit.sendConfidentialRequest(
+		const submissionRes = await c.oracleContract.queryAndSubmit.sendCCR(
 			c.ticker,
 			nonce,
 			gasPrice,
@@ -77,7 +76,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 	const holeskySigner = utils.makeHoleskySigner()
 
 	const networkConfig: any = hre.network.config
-	const suaveProvider = new SuaveProvider(networkConfig.url, executionNodeAdd)
+	const suaveProvider = new SuaveJsonRpcProvider(networkConfig.url)
 	const suaveSigner = new SuaveWallet(networkConfig.accounts[0], suaveProvider)
 	
 	const oracleContract = new SuaveContract(

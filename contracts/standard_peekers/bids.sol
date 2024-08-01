@@ -307,7 +307,7 @@ contract EthBlockContract is AnyBundleContract {
         uint64 blockHeight,
         Suave.DataId[] memory records,
         string memory relayUrl
-    ) public view returns (Suave.DataRecord memory, bytes memory) {
+    ) public returns (Suave.DataRecord memory, bytes memory) {
         address[] memory allowedPeekers = new address[](2);
         allowedPeekers[0] = address(this);
         allowedPeekers[1] = Suave.BUILD_ETH_BLOCK;
@@ -316,6 +316,7 @@ contract EthBlockContract is AnyBundleContract {
             Suave.newDataRecord(blockHeight, allowedPeekers, allowedPeekers, "default:v0:mergedDataRecords");
         Suave.confidentialStore(blockBid.id, "default:v0:mergedDataRecords", abi.encode(records));
 
+        // todo: specify the builder - mainnet/holesky
         (bytes memory builderBid, bytes memory payload) = Suave.buildEthBlock(blockArgs, blockBid.id, relayUrl);
         Suave.confidentialStore(blockBid.id, "default:v0:builderPayload", payload); // only through this.unlock
 
@@ -331,7 +332,7 @@ contract EthBlockContract is AnyBundleContract {
         return (dataRecord, builderBid);
     }
 
-    function unlock(Suave.DataId dataId, bytes memory signedBlindedHeader) public view returns (bytes memory) {
+    function unlock(Suave.DataId dataId, bytes memory signedBlindedHeader) public returns (bytes memory) {
         require(Suave.isConfidential());
 
         // TODO: verify the header is correct
