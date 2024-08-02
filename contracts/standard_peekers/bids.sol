@@ -295,7 +295,7 @@ contract EthBlockContract is AnyBundleContract {
         require(Suave.isConfidential());
 
         (Suave.DataRecord memory blockBid, bytes memory builderBid) =
-            this.doBuild(blockArgs, blockHeight, records, relayUrl);
+            this.doBuild(blockArgs, blockHeight, records, relayUrl, "");
 
         emit BuilderBoostBidEvent(blockBid.id, builderBid);
         emit DataRecordEvent(blockBid.id, blockBid.decryptionCondition, blockBid.allowedPeekers);
@@ -306,7 +306,8 @@ contract EthBlockContract is AnyBundleContract {
         Suave.BuildBlockArgs memory blockArgs,
         uint64 blockHeight,
         Suave.DataId[] memory records,
-        string memory relayUrl
+        string memory relayUrl, 
+        string memory executionNodeURL
     ) public returns (Suave.DataRecord memory, bytes memory) {
         address[] memory allowedPeekers = new address[](2);
         allowedPeekers[0] = address(this);
@@ -317,7 +318,12 @@ contract EthBlockContract is AnyBundleContract {
         Suave.confidentialStore(blockBid.id, "default:v0:mergedDataRecords", abi.encode(records));
 
         // todo: specify the builder - mainnet/holesky
-        (bytes memory builderBid, bytes memory payload) = Suave.buildEthBlock(blockArgs, blockBid.id, relayUrl);
+        (bytes memory builderBid, bytes memory payload) = Suave.buildEthBlockTo(
+            executionNodeURL, 
+            blockArgs, 
+            blockBid.id, 
+            relayUrl
+        );
         Suave.confidentialStore(blockBid.id, "default:v0:builderPayload", payload); // only through this.unlock
 
         return (blockBid, builderBid);
@@ -344,9 +350,11 @@ contract EthBlockContract is AnyBundleContract {
 
 contract EthBlockBidSenderContract is EthBlockContract {
     string boostRelayUrl;
+    string executionNodeUrl;
 
-    constructor(string memory boostRelayUrl_) {
+    constructor(string memory boostRelayUrl_, string memory _executionNodeUrl) {
         boostRelayUrl = boostRelayUrl_;
+        executionNodeUrl = _executionNodeUrl;
     }
 
     function buildAndEmit(
@@ -358,7 +366,7 @@ contract EthBlockBidSenderContract is EthBlockContract {
         require(Suave.isConfidential());
 
         (Suave.DataRecord memory blockDataRecord, bytes memory builderBid) =
-            this.doBuild(blockArgs, blockHeight, dataRecords, namespace);
+            this.doBuild(blockArgs, blockHeight, dataRecords, namespace, executionNodeUrl);
         Suave.submitEthBlockToRelay(boostRelayUrl, builderBid);
 
         emit DataRecordEvent(blockDataRecord.id, blockDataRecord.decryptionCondition, blockDataRecord.allowedPeekers);

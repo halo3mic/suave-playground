@@ -5,8 +5,8 @@ import { getEnvValSafe } from '../../tasks/utils'
 const deployOptions: DeployOptions = {
 	name: 'BlockAdAuctionV2', 
 	contractName: 'BlockAdAuctionV2', 
-	args: [ getEnvValSafe('HOLESKY_RELAY') ], 
-	tags: [ 'blockad' ]
+	args: [ getEnvValSafe('MAINNET_RELAY'), 'mainnet' ], 
+	tags: [ 'blockad-mainnet' ]
 }
 
 module.exports = makeDeployCallback(deployOptions)

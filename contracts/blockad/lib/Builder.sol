@@ -10,11 +10,13 @@ import { SuaveContract } from "./SuaveContract.sol";
 contract Builder is EthBlockContract, SuaveContract {
 	string constant BB_NAMESPACE = "blockad:v0:builderBid";
 	string boostRelayUrl;
+	string executionRpcUrl;
 
 	event RelaySubmission(bytes32 bidId);
 
-	constructor(string memory boostRelayUrl_) {
+	constructor(string memory boostRelayUrl_, string memory executionRpcUrl_) {
 		boostRelayUrl = boostRelayUrl_;
+		executionRpcUrl = executionRpcUrl_;
 	}
 
 	function buildAndEmitCallback(string memory blockHash, bytes32 id) external returns (string memory) {
@@ -28,7 +30,7 @@ contract Builder is EthBlockContract, SuaveContract {
 		Suave.DataId[] memory bids,
 		string memory
 	) public virtual override onlyConfidential returns (bytes memory) {
-		(,bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, boostRelayUrl); // Also submits to relay
+		(,bytes memory builderBid) = this.doBuild(blockArgs, blockHeight, bids, boostRelayUrl, executionRpcUrl); // Also submits to relay
 		string memory blockHash = extractBlockHash(builderBid, blockArgs.slot);
 		return abi.encodeWithSelector(this.buildAndEmitCallback.selector, blockHash, keccak256(builderBid));
 	}
