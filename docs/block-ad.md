@@ -1,4 +1,4 @@
-# Oracle setup
+# BlockAd setup
 
 
 ## Env setup 
@@ -20,27 +20,23 @@ Create `.env` file based on [`.env.sample`](./.env.sample) and fill in the follo
 * `TOLIMAN_RPC`: RPC endpoint of fb Toliman Suave execution client.
 * `HOLESKY_RPC`: RPC endpoint of your Holesky client. Use the port you specified during Holesky setup.
 
+### Beacon Node 
+To submit the block to the relay, you will need to listen for the latest beacon node's `payload_attributes`, which are required for block submission to the relay.
+
+If you don't have a beacon node, set it up. For example, follow official Prysm instructions [here](https://docs.prylabs.network/docs/install/install-with-script).
+
+
+### Local nodes
+
+If you wish to run local SUAVE nodes, including SUAVE execution geth, follow the [local-development](./local-setup.md) doc.
+
 ## Deploy contracts
-
-### Holesky settlement contract
-```bash
-$ npx hardhat deploy --tags oracle-settlement --network holesky
+```
+$ npx hardhat deploy --tags blockad --network <network>
 ```
 
-### Oracle contract
-```bash
-$ npx hardhat deploy --tags binance-oracle [--network toliman]
-```
-Omit the last part to deploy it on your local chain.
-
-## Run Oracle
+## Usage
+Submit ad-request, build block and broadcast it to the relay
 ```bash 
-$ npx hardhat oracle-updates --ticker <binance_ticker> --nblocks <number_of_blocks> --network <suave/toliman>
+$ npx hardhat block-ad --extra "So Extra 🔥" --adbid 0.2 --nslots 10 --build
 ```
-
-or for Toliman continuous run:
-
-```bash 
-$ ./scripts/oracle_updates_toliman.sh <binance_ticker>
-```
-
