@@ -2,8 +2,6 @@
 
 Welcome to the SUAVE Playground! The repository served as a playground for building and testing various applications using SUAVE.
 
-Please note that SUAVE is an actively developed project, and with new updates, this repository might become outdated. Always refer to the official [SUAVE website](https://suave.flashbots.net/) for the latest changes.
-
 ## Apps
 
 ### BlockAd ✨
@@ -17,8 +15,8 @@ Use SUAVE to post Binance price updates to Holesky.
 
 [Setup and usage guide](./docs/oracle.md)
 
+----- 
 
-## Contribution
-Please feel free to contribute!
+Note that SUAVE is an actively developed project, and with new updates, this repository might become outdated. Always refer to the official [SUAVE website](https://suave.flashbots.net/) for the latest changes.
 
 ~ [X](https://twitter.com/MihaLotric)
