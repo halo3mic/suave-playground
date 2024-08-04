@@ -67,7 +67,7 @@ Add file to the root of the folder and create a genesis block.
 ```bash
 $ ./build/bin/geth init ./genesis.json --datadir $SUAVE_DATADIR
 ```
-### Run Suave execution node
+### Run SUAVE node
 Example command for running local SUAVE network
 ```bash
 $ ./build/bin/geth --dev --dev.gaslimit 30000000 --datadir $SUAVE_DATADIR --http --http.addr "127.0.0.1" --http.api "eth,web3,net,clique" --allow-insecure-unlock --unlock $SEALER_ADDRESS --password ./password --ws --suave.eth.remote_endpoint "http://localhost:$HOLESKY_RPC_PORT" --miner.gasprice 0 --networkid 424242 --suave.eth.external-whitelist "*"
