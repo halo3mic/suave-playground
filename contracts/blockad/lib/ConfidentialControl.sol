@@ -19,17 +19,18 @@ abstract contract ConfidentialControl is SuaveContract {
 		nonce++;
 	}
 
+	modifier onlyOwner() {
+		crequire(msg.sender == ccontrolOwner, "Unauthorized");
+		_;
+	}
+
+	address public immutable ccontrolOwner = msg.sender;
 	string internal constant S_NAMESPACE = "blockad:v0:secret";
 	Suave.DataId internal secretBidId;
 	bytes32 internal presentHash;
 	uint internal nonce;
 
-	/**********************************************************************
-	 *                           ⛓️ ON-CHAIN METHODS                       *
-	 ***********************************************************************/
-
-	function ccCallback(bytes32 nextHash, Suave.DataId sBidId) external {
-		crequire(!isInitialized(), "Already initialized");
+	function ccCallback(bytes32 nextHash, Suave.DataId sBidId) external onlyOwner {
 		presentHash = nextHash;
 		secretBidId = sBidId;
 	}
@@ -38,21 +39,16 @@ abstract contract ConfidentialControl is SuaveContract {
 		return presentHash != 0;
 	}
 
-	/**********************************************************************
-	 *                         🔒 CONFIDENTIAL METHODS                      *
-	 ***********************************************************************/
-
-	function confidentialConstructor() public virtual onlyConfidential returns (bytes memory) {
-		crequire(!isInitialized(), "Already initialized");
+	function init() internal onlyOwner returns (bytes memory) {
 		bytes memory secret = Suave.confidentialInputs();
 		Suave.DataId sBidId = storeSecret(secret);
 		bytes32 nextHash = makeHash(abi.decode(secret, (bytes32)), nonce);
 		return abi.encodeWithSelector(this.ccCallback.selector, nextHash, sBidId);
 	}
 
-	/**********************************************************************
-	 *                         🛠️ INTERNAL METHODS                          *
-	 ***********************************************************************/
+	function getUnlockPair() internal returns (UnlockArgs memory) {
+		return UnlockArgs(getKey(nonce), getHash(nonce + 1));
+	}
 
 	function storeSecret(bytes memory secret) internal returns (Suave.DataId) {
 		address[] memory peekers = new address[](3);
@@ -66,10 +62,6 @@ abstract contract ConfidentialControl is SuaveContract {
 
 	function isValidKey(bytes32 key) internal view returns (bool) {
 		return keccak256(abi.encode(key)) == presentHash;
-	}
-
-	function getUnlockPair() internal returns (UnlockArgs memory) {
-		return UnlockArgs(getKey(nonce), getHash(nonce + 1));
 	}
 
 	function getHash(uint _nonce) internal returns (bytes32) {

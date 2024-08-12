@@ -8,6 +8,7 @@ import 'hardhat-deploy'
 import { getEnvValSafe } from './tasks/utils'
 import './tasks/oracle-updates'
 import './tasks/build-blocks'
+import './tasks/adblock-init'
 import './tasks/mevshare'
 import './tasks/adblock'
 

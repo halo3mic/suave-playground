@@ -17,7 +17,7 @@ task('block-ad', 'Submit bids, build blocks and send them to relay')
 	.addOptionalParam('adbid', 'Bid amount in ETH for including the ad', 0.2, types.float)
 	.addOptionalParam('nslots', 'For how many blocks the ad-request is valid', 2, types.int)
 	.addOptionalParam('builder', 'Address of a Builder contract. By default fetch most recently deployed one.')
-	.addOptionalParam('mevshare', 'Address of a MevShare contract. By default fetch most recently deployed one.')
+	.addOptionalParam('blockad', 'Address of a BlockAd contract. By default fetch most recently deployed one.')
 	.addFlag('build', 'Whether to build blocks after sending the ad-request')
 	.setAction(async function (taskArgs: any, hre: HRE) {
 		utils.checkChain(hre, supportedSuaveChains)
@@ -92,7 +92,7 @@ async function confidentialInit(c: ITaskConfig): Promise<boolean> {
 	const confidentialInputs = ethers.utils.id(utils.getRandomStr())
 	const ccrPromise = c.blockad.confidentialConstructor.sendCCR({ confidentialInputs })
 	console.log('Sending init tx')
-	return utils.prettyPromise(ccrPromise, c.blockad, 'Building block')
+	return utils.prettyPromise(ccrPromise, c.blockad, 'Initializing BlockAdAuction')
 		.then(utils.handleResult)
 }
 
@@ -133,11 +133,7 @@ async function getConfig(hre: HRE, taskArgs: any): Promise<ITaskConfig> {
 export async function getEnvConfig(hhChainId: number) {
 	const holeskySigner = utils.makeHoleskySigner()
 	const suaveSigner = utils.makeSuaveSigner(hhChainId)
-	const executionNodeAdd = await (suaveSigner.provider as any)
-		.send('eth_kettleAddress', [])
-		.then((res: string[]) => res[0])
 	return {
-		executionNodeAdd,
 		holeskySigner,
 		suaveSigner,
 	}
@@ -148,7 +144,7 @@ async function parseTaskArgs(hre: HRE, taskArgs: any) {
 	const extra = taskArgs.extra
 	const adBid = taskArgs.adbid
 	const blockadContract = taskArgs.blockad
-		? await hre.ethers.getContractAt('BlockAdAuctionV2', taskArgs.mevshare)
+		? await hre.ethers.getContractAt('BlockAdAuctionV2', taskArgs.blockad)
 		: await utils.fetchDeployedContract(hre, 'BlockAdAuctionV2')
 
 	return { blockadContract, extra, adBid, nslots }
