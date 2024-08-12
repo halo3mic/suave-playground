@@ -213,4 +213,11 @@ export function getRandomStr() {
 	return ranInt.toString(16)
 }
 
+export function errorIsPayloadNotKnown(e: string) {
+	const msgDecoded = '{"code":400,"message":"payload attributes not (yet) known"}'
+	const msgEncoded = 'http error: 400 Bad Request: [123 34 99 111 100 101 34 58 52 48 48 44 34 109 101 115 115 97 103 101 34 58 34 112 97 121 108 111 97 100 32 97 116 116 114 105 98 117 116 101 115 32 110 111 116 32 40 121 101 116 41 32 107 110 111 119 110 34 125 10]'
+	
+	return e.includes(msgDecoded) || e.includes(msgEncoded)
+}
+
 export { getEnvValSafe }

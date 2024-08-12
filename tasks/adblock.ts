@@ -48,7 +48,7 @@ async function build(c: ITaskConfig) {
 		suaveSignerAddress: c.suaveSignerAddress,
 		builder: c.blockad,
 		nSlots: c.nslots,
-		resubmit: false
+		resubmit: true
 	}
 	const bopt = { 
 		method: 'buildBlock',

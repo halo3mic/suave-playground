@@ -14,6 +14,7 @@ import { supportedSuaveChains } from './utils/const'
 
 // todo: make build lib
 // todo: instead of tasks config use build config object - only relevant params
+// todo: build only if there are active bids 
 
 type PreCall = (nextBlockNum: number) => Promise<boolean>
 interface IBuildOptions {
@@ -71,9 +72,9 @@ async function build(
 			await s.then(console.log)
 			return true
 		} else {
-			if (c.resubmit && e.includes('{"code":400,"message":"payload attributes not (yet) known"}')) {
+			if (c.resubmit && utils.errorIsPayloadNotKnown(e)) {
 				process.stdout.write('⏳ Resubmitting ... ')
-				await utils.sleep(3000)
+				await utils.sleep(1000)
 				;[s, e] = await buildBlock(c, bbArgs, blockHeight, bopt)
 				continue
 			}
