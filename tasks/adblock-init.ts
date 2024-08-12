@@ -18,11 +18,11 @@ task('block-ad-init', 'Initialize the BlockAdAuction contract')
 	})
 
 async function confidentialInit(contract: SuaveContract): Promise<boolean> {
-    const confidentialInputs = ethers.utils.id(utils.getRandomStr())
-    const ccrPromise = contract.confidentialConstructor.sendCCR({ confidentialInputs })
-    console.log('Sending init tx')
-    return utils.prettyPromise(ccrPromise, contract, 'Initializing BlockAdAuction')
-        .then(utils.handleResult)
+	const confidentialInputs = ethers.utils.id(utils.getRandomStr())
+	const ccrPromise = contract.confidentialConstructor.sendCCR({ confidentialInputs })
+	console.log('Sending init tx')
+	return utils.prettyPromise(ccrPromise, contract, 'Initializing BlockAdAuction')
+		.then(utils.handleResult)
 }
 
 async function getBlockAdContract(hre: HRE, blockad?: string): Promise<SuaveContract> {
