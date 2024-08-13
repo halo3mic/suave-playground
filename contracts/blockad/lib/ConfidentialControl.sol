@@ -30,20 +30,23 @@ abstract contract ConfidentialControl is SuaveContract {
 	bytes32 internal presentHash;
 	uint internal nonce;
 
-	function ccCallback(bytes32 nextHash, Suave.DataId sBidId) external onlyOwner {
+	function ccontrolInitCallback(
+        bytes32 nextHash, 
+        Suave.DataId sBidId
+    ) external onlyOwner {
 		presentHash = nextHash;
 		secretBidId = sBidId;
 	}
 
-	function isInitialized() public view returns (bool) {
+	function ccontrolIsInitialized() public view returns (bool) {
 		return presentHash != 0;
 	}
 
-	function init() internal onlyOwner returns (bytes memory) {
-		bytes memory secret = Suave.confidentialInputs();
+	function ccontrolInit() public onlyOwner returns (bytes memory) {
+		bytes memory secret = Suave.randomBytes(32);
 		Suave.DataId sBidId = storeSecret(secret);
 		bytes32 nextHash = makeHash(abi.decode(secret, (bytes32)), nonce);
-		return abi.encodeWithSelector(this.ccCallback.selector, nextHash, sBidId);
+		return abi.encodeWithSelector(this.ccontrolInitCallback.selector, nextHash, sBidId);
 	}
 
 	function getUnlockPair() internal returns (UnlockArgs memory) {

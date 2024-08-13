@@ -89,8 +89,7 @@ async function cInitIfNeeded(c: ITaskConfig): Promise<void> {
 }
 
 async function confidentialInit(c: ITaskConfig): Promise<boolean> {
-	const confidentialInputs = ethers.utils.id(utils.getRandomStr())
-	const ccrPromise = c.blockad.confidentialConstructor.sendCCR({ confidentialInputs })
+	const ccrPromise = c.blockad.confidentialConstructor.sendCCR()
 	console.log('Sending init tx')
 	return utils.prettyPromise(ccrPromise, c.blockad, 'Initializing BlockAdAuction')
 		.then(utils.handleResult)

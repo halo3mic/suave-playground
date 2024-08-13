@@ -72,7 +72,7 @@ contract BlockAdAuctionV2 is AnyBundleContract, ConfidentialControl {
 	 ***********************************************************************/
 
 	function confidentialConstructor() public onlyConfidential returns (bytes memory) {
-		return ConfidentialControl.init();
+		return ConfidentialControl.ccontrolInit();
 	}
 
 	function buyAd(uint64 blockLimit, string memory extra) external onlyConfidential returns (bytes memory) {
